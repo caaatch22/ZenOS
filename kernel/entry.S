@@ -1,17 +1,26 @@
-# the first code executing after sbi jump to 0x80000000
+# the first code executing after sbi jump to 0x80200000
+.equ INISTACKSIZE, 4096
+.equ NCPU 2
 
 .section .text
 .globl _entry
-.equ INISTACKSIZE, 4096
 
 _entry:
-  la sp, _initialstack # from start.c (defined as an array)
-  li a0, INISTACKSIZE
-  csrr a1, mhartid # per-cpu stack
-  addi a1, a1, 1 # point to the top of stacks
-  mul a0, a0, a1
-  add sp, sp, a0
-  call start
+  la sp, _initialstack # defined below
+  li t0, INISTACKSIZE
+  addi t1, a0, 1 # point to the top of stacks
+  mul t0, t0, t1 # per-cpu stacks
+  add sp, sp, t0
+  call main
 
 _errspin:
   j _errspin # will never enter this portion
+
+.section .bss.initialstack
+.globl _initialstack
+
+_initialstack:
+  .space INISTACKSIZE*NCPU
+
+.globl _e_initialstack
+e_initialstack:

@@ -4,6 +4,23 @@
 
 #include "defs.h"
 
+#define MSTATUS_SIE (1<<1)
+#define MSTATUS_MIE (1<<3)
+#define MSTATUS_SPIE (1<<5)
+#define MSTATUS_SPP (1<<8)
+#define MSTATUS_MPP_MASK (3<<11)
+#define MSTATUS_MPP_SMODE (1<<11)
+#define MSTATUS_MPP_UMODE (0)
+
+static inline uint64 r_misa()
+{
+  uint64 x;
+  asm volatile(
+      "csrr %0, misa"
+      : "=r"(x));
+  return x;
+}
+
 static inline uint64 r_mhartid()
 {
   uint64 x;
