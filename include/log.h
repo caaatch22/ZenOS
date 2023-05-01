@@ -1,6 +1,10 @@
 #ifndef LOG_H
 #define LOG_H
 
+extern void print(char *fmt, ...);
+extern int threadid();
+extern void shutdown();
+
 enum LOG_COLOR {
   RED = 31,
   GREEN = 32,
@@ -66,8 +70,8 @@ void dummy(int _, ...) {}
 #define LOG_WARN(fmt, ...)                                                        \
   do {                                                                   \
     int tid = threadid();                                          \
-    printf("\x1b[%dm[%s %d]" fmt "\x1b[0m\n", YELLOW, "WARN", tid, \
-           ##__VA_ARGS__);                                         \
+    print("\x1b[%dm[%s %d]" fmt "\x1b[0m\n", YELLOW, "WARN", tid, \
+          ##__VA_ARGS__);                                         \
   } while (0)
 #else
 #define LOG_WARN(fmt, ...) dummy(0, ##__VA_ARGS__)
@@ -77,8 +81,8 @@ void dummy(int _, ...) {}
 #define LOG_INFO(fmt, ...)                                                        \
   do {                                                                   \
     int tid = threadid();                                          \
-    printf("\x1b[%dm[%s %d]" fmt "\x1b[0m\n", BLUE, "INFO", tid,   \
-           ##__VA_ARGS__);                                         \
+    print("\x1b[%dm[%s %d]" fmt "\x1b[0m\n", BLUE, "INFO", tid,   \
+          ##__VA_ARGS__);                                         \
   } while (0)
 #else
 #define LOG_INFO(fmt, ...) dummy(0, ##__VA_ARGS__)
@@ -88,8 +92,8 @@ void dummy(int _, ...) {}
 #define LOG_DEBUG(fmt, ...)                                                       \
   do {                                                                   \
     int tid = threadid();                                          \
-    printf("\x1b[%dm[%s %d]" fmt "\x1b[0m\n", GREEN, "DEBUG", tid, \
-           ##__VA_ARGS__);                                         \
+    print("\x1b[%dm[%s %d]" fmt "\x1b[0m\n", GREEN, "DEBUG", tid, \
+          ##__VA_ARGS__);                                         \
   } while (0)
 #else
 #define LOG_DEBUG(fmt, ...) dummy(0, ##__VA_ARGS__)
@@ -99,8 +103,8 @@ void dummy(int _, ...) {}
 #define LOG_TRACE(fmt, ...)                                                       \
   do {                                                                   \
     int tid = threadid();                                          \
-    printf("\x1b[%dm[%s %d]" fmt "\x1b[0m\n", GRAY, "TRACE", tid,  \
-           ##__VA_ARGS__);                                         \
+    print("\x1b[%dm[%s %d]" fmt "\x1b[0m\n", GRAY, "TRACE", tid,  \
+          ##__VA_ARGS__);                                         \
   } while (0)
 #else
 #define LOG_TRACE(fmt, ...) dummy(0, ##__VA_ARGS__)
@@ -109,8 +113,8 @@ void dummy(int _, ...) {}
 #define PANIC(fmt, ...)                                                        \
   do {                                                                   \
     int tid = threadid();                                          \
-    printf("\x1b[%dm[%s %d] %s:%d: " fmt "\x1b[0m\n", RED,         \
-           "PANIC", tid, __FILE__, __LINE__, ##__VA_ARGS__);       \
+    print("\x1b[%dm[%s %d] %s:%d: " fmt "\x1b[0m\n", RED,         \
+          "PANIC", tid, __FILE__, __LINE__, ##__VA_ARGS__);       \
     shutdown();                                                    \
   } while (0)
 
