@@ -29,7 +29,10 @@ SECTIONS
 
   .bss : {
       . = ALIGN(16);
+      PROVIDE(bss=.);
       *(.sbss .sbss.* .bss .bss.*)
+      . = ALIGN(16);
+      PROVIDE(ebss=.);
   }
 
   PROVIDE(end = .)
