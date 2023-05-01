@@ -12,7 +12,7 @@ const uint64 SBI_REMOTE_SFENCE_VMA = 6;
 const uint64 SBI_REMOTE_SFENCE_VMA_ASID = 7;
 const uint64 SBI_SHUTDOWN = 8;
 
-int inline sbi_call(uint64 EID, uint64 arg0, uint64 arg1, uint64 arg2)
+int inline sbi_legacy_call(uint64 EID, uint64 arg0, uint64 arg1, uint64 arg2)
 {
   register uint64 a0 asm("a0") = arg0;
   register uint64 a1 asm("a1") = arg1;
