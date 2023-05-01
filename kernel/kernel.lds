@@ -2,7 +2,7 @@ OUTPUT_ARCH("riscv")
 OUTPUT_FORMAT("elf64-littleriscv")
 ENTRY(_entry)
 
-BASE_ADDRESS=0x80000000  /*specified by sbi compiling parameter*/
+BASE_ADDRESS=0x80200000  /*specified by sbi compiling parameter*/
 
 SECTIONS
 {
