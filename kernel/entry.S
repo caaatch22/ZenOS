@@ -2,7 +2,7 @@
 .equ INISTACKSIZE, 4096
 .equ NCPU, 2
 
-.section .text
+.section .text.entry
 .globl _entry
 
 _entry:

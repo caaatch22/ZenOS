@@ -80,3 +80,5 @@ void print(char *fmt, ...)
     }
   }
 }
+
+void dummy(int _, ...) {}
