@@ -25,12 +25,12 @@ int inline sbi_legacy_call(uint64 EID, uint64 arg0, uint64 arg1, uint64 arg2)
   return a0;
 }
 
-void console_putchar(int)
+void console_putchar(int);
 
-int console_getchar(void)
+int console_getchar(void);
 
-void shutdown(void)
+void shutdown(void);
 
-void set_timer(uint64)
+void set_timer(uint64);
 
 #endif
