@@ -4,6 +4,7 @@
 extern void print(char *fmt, ...);
 extern int threadid();
 extern void shutdown();
+extern void dummy(int, ...);
 
 enum LOG_COLOR {
   RED = 31,
@@ -52,8 +53,6 @@ enum LOG_COLOR {
 #define USE_LOG_TRACE
 
 #endif // LOG_LEVEL_TRACE
-
-void dummy(int _, ...) {}
 
 #if defined(USE_LOG_ERROR)
 #define LOG_ERROR(fmt, ...)                                                       \

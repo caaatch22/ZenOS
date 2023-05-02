@@ -1,8 +1,8 @@
 # the first code executing after sbi jump to 0x80200000
 .equ INISTACKSIZE, 4096
-.equ NCPU 2
+.equ NCPU, 2
 
-.section .text
+.section .text.entry
 .globl _entry
 
 _entry:
