@@ -1,7 +1,7 @@
 #ifndef LOG_H
 #define LOG_H
 
-extern void print(char *fmt, ...);
+extern void print(const char *fmt, ...);
 extern int threadid();
 extern void shutdown();
 extern void dummy(int, ...);

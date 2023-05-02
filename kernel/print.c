@@ -38,7 +38,7 @@ static void printptr(uint64 x)
 }
 
 // Print to the console. only understands %d, %x, %p, %s.
-void print(char *fmt, ...)
+void print(const char *fmt, ...)
 {
   va_list ap;
   int i, c;
