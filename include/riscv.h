@@ -285,4 +285,38 @@ static inline void w_satp(uint64 x)
       :
       : "r"(x));
 }
+
+static inline uint64 r_sstatus()
+{
+  uint64 x;
+  asm volatile(
+      "csrr %0, sstatus"
+      : "=r"(x));
+  return x;
+}
+
+static inline void w_sstatus(uint64 x)
+{
+  asm volatile(
+      "csrw sstatus, %0"
+      :
+      : "r"(x));
+}
+
+static inline void intr_disable()
+{
+  uint64 sstatus_scratch;
+  sstatus_scratch = r_sstatus();
+  sstatus_scratch &= ~MSTATUS_SIE;
+  w_sstatus(sstatus_scratch);
+}
+
+static inline void intr_enable()
+{
+  uint64 sstatus_scratch;
+  sstatus_scratch = r_sstatus();
+  sstatus_scratch |= ~MSTATUS_SIE;
+  w_sstatus(sstatus_scratch);
+}
+
 #endif
