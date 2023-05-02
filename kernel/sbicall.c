@@ -2,20 +2,22 @@
 
 void console_putchar(int c)
 {
-  sbi_legacy_call(SBI_CONSOLE_PUTCHAR, c, 0, 0);
+  sbi_legacy_call(SBI_LEGACY_CONSOLE_PUTCHAR_EID, c, 0, 0);
 }
 
 int console_getchar()
 {
-  return sbi_legacy_call(SBI_CONSOLE_GETCHAR, 0, 0, 0);
+  return sbi_legacy_call(SBI_LEGACY_CONSOLE_GETCHAR_EID, 0, 0, 0);
 }
 
 void shutdown()
 {
-  sbi_legacy_ccall(SBI_SHUTDOWN, 0, 0, 0);
+  sbi_call(SBI_SRST_EID, SBI_SYSTEM_RESET_FID, SBI_RESET_TYPE_SHUTDOWN, 0, 0);
 }
 
 void set_timer(uint64 stime)
 {
-  sbi_legacy_ccall(SBI_SET_TIMER, stime, 0, 0);
+  sbi_legacy_call(SBI_LEGACY_SET_TIMER_EID, stime, 0, 0);
 }
+
+

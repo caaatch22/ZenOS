@@ -1,16 +1,15 @@
 OUTPUT_ARCH("riscv")
 OUTPUT_FORMAT("elf64-littleriscv")
 ENTRY(_entry)
-
-BASE_ADDRESS=0x80200000  /*specified by sbi compiling parameter*/
+BASE_ADDRESS = 0x80200000; /*specified by sbi compiling parameter*/
 
 SECTIONS
 {
-  .=BASE_ADDRESS;
+  . = BASE_ADDRESS;
   .text . : {
     *(.text .text.*)
       . = ALIGN(4K);
-      PROVIDE(_trapforward=.);
+      PROVIDE(_trapforward = .);
       *(.trapforwardsec)
       . = ALIGN(4K);
       ASSERT(( . - _trapforward ) == 4K, "err : trapforward sector is larger than 4K" );
@@ -29,11 +28,11 @@ SECTIONS
 
   .bss : {
       . = ALIGN(16);
-      PROVIDE(bss=.);
+      PROVIDE(bss = .);
       *(.sbss .sbss.* .bss .bss.*)
       . = ALIGN(16);
-      PROVIDE(ebss=.);
+      PROVIDE(ebss = .);
   }
 
-  PROVIDE(end = .)
+  PROVIDE(end = .);
 }
