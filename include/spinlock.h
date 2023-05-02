@@ -13,6 +13,6 @@ typedef struct spinlock
 
 void init_spinlock(spinlock *,char *);
 void push_off(void);
-void pull_off(void);
+void pop_off(void);
 
 #endif

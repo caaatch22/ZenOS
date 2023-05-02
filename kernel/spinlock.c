@@ -13,7 +13,4 @@ void init_spinlock(spinlock *lock,char *name)
 void acqure_spinlock(spinlock *lock)
 {
   push_off();
-
-  intr_disable();
-
 }
