@@ -11,6 +11,7 @@ _entry:
   addi t1, a0, 1 # point to the top of stacks
   mul t0, t0, t1 # per-cpu stacks
   add sp, sp, t0
+  add tp, a0, x0
   call main
 
 _errspin:
@@ -18,6 +19,7 @@ _errspin:
 
 .section .bss.initialstack
 .globl _initialstack
+.align 8
 
 _initialstack:
   .space INISTACKSIZE*NCPU
