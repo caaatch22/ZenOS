@@ -19,6 +19,7 @@ _errspin:
 
 .section .bss.initialstack
 .globl _initialstack
+.align 8
 
 _initialstack:
   .space INISTACKSIZE*NCPU
