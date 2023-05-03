@@ -14,16 +14,16 @@ void init_spinlock(spinlock *lock,char *name)
 
 void acqure_spinlock(spinlock *lock)
 {
-  push_off();
+  push_off(); //disable interrupt
   if((lock->locked==1)&&(lock->holder==mycpu()))
     PANIC("MULTIPLE ACQUIRE\n");
 
-  while(__sync_test_and_set(lock->locked,1))
+  while(__sync_lock_test_and_set(&lock->locked,1))
     ;
   lock->holder = mycpu();
   __sync_synchronize();
 
-  pop_off();
+  pop_off();  //enable interrupt
 }
 
 void release_spinlock(spinlock *lock)

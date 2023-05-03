@@ -6,7 +6,7 @@
 
 typedef struct spinlock
 {
-  uint8 locked;
+  uint32 locked;
   char *nickname;
   cpu_status *holder;
 } spinlock;
