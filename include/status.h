@@ -25,7 +25,7 @@ typedef struct cpu_status
   context prev_context;
   struct proc_status *running_proc;
   uint32 intr_disable_depth;
-  uint32 prev_intr_status;
+  uint64 prev_intr_status;
 } cpu_status;
 
 typedef struct proc_status

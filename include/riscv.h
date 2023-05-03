@@ -302,7 +302,7 @@ static inline void w_sstatus(uint64 x)
       :
       : "r"(x));
 }
-
+/*don't use it
 static inline void intr_disable()
 {
   uint64 sstatus_scratch;
@@ -318,5 +318,5 @@ static inline void intr_enable()
   sstatus_scratch |= ~MSTATUS_SIE;
   w_sstatus(sstatus_scratch);
 }
-
+*/
 #endif
