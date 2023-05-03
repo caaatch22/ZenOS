@@ -32,7 +32,7 @@ void *pm_alloc(void)
   while (1)
   {
     allocated_node = physical_mem.head;
-    if(__sync_lock_compare_and_swap(&physical_mem.head, allocated_node, allocated_node->next) == allocated_node)
+    if(__sync_bool_compare_and_swap(&physical_mem.head, allocated_node, allocated_node->next))
       break;
   }
   return (void *)allocated_node;
@@ -49,7 +49,7 @@ void pm_free(pm_page_node *node)
   {
     node->next = physical_mem.head;
     old = physical_mem.head;
-    if (__sync_lock_compare_and_swap(&physical_mem.head, node->next, node) == old)
+    if (__sync_bool_compare_and_swap(&physical_mem.head, node->next, node))
       break;
   }
 }
