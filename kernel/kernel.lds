@@ -37,5 +37,5 @@ SECTIONS
     PROVIDE(ebss = .);
   }
 
-  PROVIDE(end = .);
+  PROVIDE(ekernel = .);
 }
