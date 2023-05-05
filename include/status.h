@@ -5,72 +5,72 @@
 
 typedef struct context
 {
-  uint64 ra;
-  uint64 s0;
-  uint64 s1;
-  uint64 s2;
-  uint64 s3;
-  uint64 s4;
-  uint64 s5;
-  uint64 s6;
-  uint64 s7;
-  uint64 s8;
-  uint64 s9;
-  uint64 s10;
-  uint64 s11;
+  uint64_t ra;
+  uint64_t s0;
+  uint64_t s1;
+  uint64_t s2;
+  uint64_t s3;
+  uint64_t s4;
+  uint64_t s5;
+  uint64_t s6;
+  uint64_t s7;
+  uint64_t s8;
+  uint64_t s9;
+  uint64_t s10;
+  uint64_t s11;
 } context;
 
 typedef struct cpu_status
 {
   context prev_context;
   struct proc_status *running_proc;
-  uint32 intr_disable_depth;
-  uint64 prev_intr_status;
+  uint32_t intr_disable_depth;
+  uint64_t prev_intr_status;
 } cpu_status;
 
 typedef struct proc_status
 {
-  uint64 proc_id;
+  uint64_t proc_id;
   //TODO
 } proc_status;
 
 struct trapframe {
-  /*   0 */ uint64 kernel_satp;   // kernel page table
-  /*   8 */ uint64 kernel_sp;     // top of process's kernel stack
-  /*  16 */ uint64 trap_function;   // usertrap()
-  /*  24 */ uint64 epc;           // saved user program counter
-  /*  32 */ uint64 kernel_hartid; // saved kernel tp
-  /*  40 */ uint64 ra;
-  /*  48 */ uint64 sp;
-  /*  56 */ uint64 gp;
-  /*  64 */ uint64 tp;
-  /*  72 */ uint64 t0;
-  /*  80 */ uint64 t1;
-  /*  88 */ uint64 t2;
-  /*  96 */ uint64 s0;
-  /* 104 */ uint64 s1;
-  /* 112 */ uint64 a0;
-  /* 120 */ uint64 a1;
-  /* 128 */ uint64 a2;
-  /* 136 */ uint64 a3;
-  /* 144 */ uint64 a4;
-  /* 152 */ uint64 a5;
-  /* 160 */ uint64 a6;
-  /* 168 */ uint64 a7;
-  /* 176 */ uint64 s2;
-  /* 184 */ uint64 s3;
-  /* 192 */ uint64 s4;
-  /* 200 */ uint64 s5;
-  /* 208 */ uint64 s6;
-  /* 216 */ uint64 s7;
-  /* 224 */ uint64 s8;
-  /* 232 */ uint64 s9;
-  /* 240 */ uint64 s10;
-  /* 248 */ uint64 s11;
-  /* 256 */ uint64 t3;
-  /* 264 */ uint64 t4;
-  /* 272 */ uint64 t5;
-  /* 280 */ uint64 t6;
+  /*   0 */ uint64_t kernel_satp;   // kernel page table
+  /*   8 */ uint64_t kernel_sp;     // top of process's kernel stack
+  /*  16 */ uint64_t trap_function;   // usertrap()
+  /*  24 */ uint64_t epc;           // saved user program counter
+  /*  32 */ uint64_t kernel_hartid; // saved kernel tp
+  /*  40 */ uint64_t ra;
+  /*  48 */ uint64_t sp;
+  /*  56 */ uint64_t gp;
+  /*  64 */ uint64_t tp;
+  /*  72 */ uint64_t t0;
+  /*  80 */ uint64_t t1;
+  /*  88 */ uint64_t t2;
+  /*  96 */ uint64_t s0;
+  /* 104 */ uint64_t s1;
+  /* 112 */ uint64_t a0;
+  /* 120 */ uint64_t a1;
+  /* 128 */ uint64_t a2;
+  /* 136 */ uint64_t a3;
+  /* 144 */ uint64_t a4;
+  /* 152 */ uint64_t a5;
+  /* 160 */ uint64_t a6;
+  /* 168 */ uint64_t a7;
+  /* 176 */ uint64_t s2;
+  /* 184 */ uint64_t s3;
+  /* 192 */ uint64_t s4;
+  /* 200 */ uint64_t s5;
+  /* 208 */ uint64_t s6;
+  /* 216 */ uint64_t s7;
+  /* 224 */ uint64_t s8;
+  /* 232 */ uint64_t s9;
+  /* 240 */ uint64_t s10;
+  /* 248 */ uint64_t s11;
+  /* 256 */ uint64_t t3;
+  /* 264 */ uint64_t t4;
+  /* 272 */ uint64_t t5;
+  /* 280 */ uint64_t t6;
 };
 
 cpu_status *mycpu(void);

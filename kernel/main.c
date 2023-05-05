@@ -10,10 +10,10 @@ extern char bss[];
 extern char ebss[];
 void clean_kernel_stack(void);
 
-volatile uint64 booted = 0;
+volatile uint64_t booted = 0;
 cpu_status CPU_STATUS[NCPU];
 
-void main(uint64 mhartid, uint64 dtb_address)
+void main(uint64_t mhartid, uint64_t dtb_address)
 {
   if(!booted) {
     //the 1st core

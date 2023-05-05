@@ -1,14 +1,15 @@
 #ifndef DEFS_H
 #define DEFS_H
 
+#define NULL ((void*) 0)
 
-typedef unsigned char uint8;
+typedef unsigned char uint8_t;
 
-typedef unsigned short uint16;
+typedef unsigned short uint16_t;
 
-typedef unsigned int uint32;
+typedef unsigned int uint32_t;
 
-typedef unsigned long uint64;
+typedef unsigned long uint64_t;
 
 
 #endif

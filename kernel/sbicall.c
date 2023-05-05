@@ -1,11 +1,11 @@
 #include "sbi.h"
 
-int sbi_legacy_call(uint64 EID, uint64 arg0, uint64 arg1, uint64 arg2)
+int sbi_legacy_call(uint64_t EID, uint64_t arg0, uint64_t arg1, uint64_t arg2)
 {
-  register uint64 a0 asm("a0") = arg0;
-  register uint64 a1 asm("a1") = arg1;
-  register uint64 a2 asm("a2") = arg2;
-  register uint64 a7 asm("a7") = EID;
+  register uint64_t a0 asm("a0") = arg0;
+  register uint64_t a1 asm("a1") = arg1;
+  register uint64_t a2 asm("a2") = arg2;
+  register uint64_t a7 asm("a7") = EID;
   asm volatile("ecall"
                : "=r"(a0)
                : "r"(a0), "r"(a1), "r"(a2), "r"(a7)
@@ -13,12 +13,12 @@ int sbi_legacy_call(uint64 EID, uint64 arg0, uint64 arg1, uint64 arg2)
   return a0;
 }
 
-int sbi_call(uint64 EID,uint64 FID, uint64 arg0, uint64 arg1, uint64 arg2){
-  register uint64 a0 asm("a0") = arg0;
-  register uint64 a1 asm("a1") = arg1;
-  register uint64 a2 asm("a2") = arg2;
-  register uint64 a6 asm("a6") = FID;
-  register uint64 a7 asm("a7") = EID;
+int sbi_call(uint64_t EID,uint64_t FID, uint64_t arg0, uint64_t arg1, uint64_t arg2){
+  register uint64_t a0 asm("a0") = arg0;
+  register uint64_t a1 asm("a1") = arg1;
+  register uint64_t a2 asm("a2") = arg2;
+  register uint64_t a6 asm("a6") = FID;
+  register uint64_t a7 asm("a7") = EID;
 
   asm volatile("ecall"
                : "=r"(a0),"=r"(a1)
@@ -47,7 +47,7 @@ void shutdown()
   sbi_call(SBI_SRST_EID, SBI_SYSTEM_RESET_FID, SBI_RESET_TYPE_SHUTDOWN, 0, 0);
 }
 
-void set_timer(uint64 stime)
+void set_timer(uint64_t stime)
 {
   sbi_legacy_call(SBI_LEGACY_SET_TIMER_EID, stime, 0, 0);
 }
