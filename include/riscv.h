@@ -319,4 +319,13 @@ static inline void intr_enable()
   w_sstatus(sstatus_scratch);
 }
 */
+
+static inline void sfence.vma(void)
+{
+  asm(
+    "sfence.vma zero, zero" //flush TLB
+    :
+    :);
+}
+
 #endif

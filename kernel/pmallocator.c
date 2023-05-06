@@ -36,7 +36,8 @@ void *pm_alloc(void)
       break;
   }
 
-  allocated_node->next = (void *)0;
+  if(allocated_node)
+    allocated_node->next = (void *)0;
 
   return (void *)allocated_node;
 }
