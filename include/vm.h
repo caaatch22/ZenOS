@@ -5,7 +5,7 @@
 
 #define VA_VPN_MASK (0x1FFul)
 #define VA_VPN_SHIFT(level) (12 + (3 - level) * 9)
-#define VA_VPN_FETCH(x, level) ((x >> VPN_SHIFT(level)) & VA_VPN_MASK)
+#define VA_VPN_FETCH(x, level) ((x >> VA_VPN_SHIFT(level)) & VA_VPN_MASK)
 
 #define PPN_MASK (0xFFFFFFFFFFFul)
 #define PA_PPN_SHIFT (12)
@@ -20,11 +20,20 @@
 #define PTE_X (1ul << 3)
 #define PTE_U (1ul << 4)
 
-typedef struct pagetable_t
-{
+struct pagetable {
   uint64_t page_entry[1 << 9];
-} pagetable_t;
+};
 
-uint64_t *pte_fetch(pagetable_t *, uint64_t);
+typedef struct pagetable* pagetable_t;
+
+uint64_t *pte_fetch(pagetable_t, uint64_t);
+
+void va_page_bind(pagetable_t pt, uint64_t va, uint64_t pa, uint64_t PTE_PERM);
+
+void va_page_bind_range(pagetable_t pt, uint64_t va, uint64_t pa, uint64_t size, uint64_t PTE_PERM);
+
+void kvminithart();
+
+void kernel_vminit();
 
 #endif
