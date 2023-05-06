@@ -14,9 +14,9 @@ void pm_freelist_init(void)
   physical_mem.head = NULL;
 
   pm_page_node *node = (pm_page_node *)PAGE_ROUNDUP(ekernel);
-
-  while(node < (pm_page_node *)PAGE_ROUNDDOWN(PHYCICAL_MEM_END)) {
+  while(node < (pm_page_node *)PAGE_ROUNDDOWN(PHYSICAL_MEM_END)) {
     pm_free(node);
+    node = (uint64_t)node + PAGE_SIZE;
   }
 }
 
@@ -45,12 +45,8 @@ void pm_free(pm_page_node *node)
   if(((uint64_t)node % PAGE_SIZE) != 0)
     PANIC("PM_FREE NOT ALIGNED");
 
-  pm_page_node *old;
-
-
   while (1) {
     node->next = physical_mem.head;
-    old = physical_mem.head;
     if (__sync_bool_compare_and_swap(&physical_mem.head, node->next, node))
       break;
   }
