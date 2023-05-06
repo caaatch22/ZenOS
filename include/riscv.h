@@ -12,6 +12,9 @@
 #define MSTATUS_MPP_SMODE (1 << 11)
 #define MSTATUS_MPP_UMODE (0)
 
+#define SATP_SV39 (8L << 60)
+#define MAKE_SATP(pagetable) (SATP_SV39 | (((uint64_t)pagetable) >> 12))
+
 static inline uint64_t r_misa()
 {
   uint64_t x;
@@ -319,4 +322,13 @@ static inline void intr_enable()
   w_sstatus(sstatus_scratch);
 }
 */
+
+static inline void sfence_vma(void)
+{
+  asm(
+    "sfence.vma zero, zero" //flush TLB
+    :
+    :);
+}
+
 #endif

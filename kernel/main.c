@@ -5,10 +5,11 @@
 #include "cpu.h"
 #include "status.h"
 #include "string.h"
+#include "pmallocator.h"
 
 extern char bss[];
 extern char ebss[];
-void clean_kernel_stack(void);
+void clean_kernel_stack();
 
 volatile uint64_t booted = 0;
 cpu_status CPU_STATUS[NCPU];
@@ -20,6 +21,8 @@ void main(uint64_t mhartid, uint64_t dtb_address)
     LOG_INFO("ZenOS boot routine processing\n");
     print(LOGO);
     clean_kernel_stack();
+    pm_freelist_init();
+    
     shutdown();
   }
   else {
@@ -27,7 +30,7 @@ void main(uint64_t mhartid, uint64_t dtb_address)
   }
 }
 
-void clean_kernel_stack(void)
+void clean_kernel_stack()
 {
   memset(bss, ebss - bss, 0);
 }
