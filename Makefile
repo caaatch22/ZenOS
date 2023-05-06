@@ -21,7 +21,7 @@ CFLAGS = \
 all:
 	$(CC) $(CFLAGS) $(KSRCS) $(LSRCS) -o ./build/kernel
 
-qemu:
+qemu: all
 	qemu-system-riscv64 -machine virt -nographic -bios default -m 128M -kernel ./build/kernel
 
 clean:
