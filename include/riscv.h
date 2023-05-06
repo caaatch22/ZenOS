@@ -320,7 +320,7 @@ static inline void intr_enable()
 }
 */
 
-static inline void sfence.vma(void)
+static inline void sfence_vma(void)
 {
   asm(
     "sfence.vma zero, zero" //flush TLB
