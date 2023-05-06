@@ -16,7 +16,7 @@ CFLAGS = \
 -static \
 -nostdlib \
 -fno-pie -no-pie \
--Wbuiltin-declaration-mismatch \
+-Wno-builtin-declaration-mismatch
 
 all:
 	$(CC) $(CFLAGS) $(KSRCS) $(LSRCS) -o ./build/kernel
