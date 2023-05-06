@@ -4,14 +4,15 @@
 #include "defs.h"
 #include "status.h"
 
-typedef struct spinlock
-{
-  uint32 locked;
+struct spinlock {
+  uint32_t locked;
   char *nickname;
   cpu_status *holder;
-} spinlock;
+};
 
-void init_spinlock(spinlock *,char *);
+typedef struct spinlock spinlock_t;
+
+void init_spinlock(spinlock_t*, char*);
 void push_off(void);
 void pop_off(void);
 
