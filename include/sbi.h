@@ -36,12 +36,12 @@
 #define SBI_RESET_REASON_NONE 0x0
 #define SBI_RESET_REASON_SYSTEM_FAILURE 0x1
 
-void console_putchar(int);
+void console_putchar(int c);
 
-int console_getchar(void);
+int console_getchar();
 
-void shutdown(void);
+void shutdown();
 
-void set_timer(uint64);
+void set_timer(uint64_t stime);
 
 #endif

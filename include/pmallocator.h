@@ -8,20 +8,18 @@
 #define PAGE_ROUNDUP(x)  (((uint64_t)x + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1))
 #define PAGE_ROUNDDOWN(x) ((uint64_t)x & ~(PAGE_SIZE - 1))
 
-typedef struct pmfreelist
-{
+typedef struct pmfreelist {
   struct pmpagenode *head;
 } pm_freelist;
 
-typedef struct pmpagenode
-{
+typedef struct pmpagenode {
   struct pmpagenode *next;
 } pm_page_node;
 
-void pm_freelist_init(void);
+void pm_freelist_init();
 
-void *pm_alloc(void);
+void *pm_alloc();
 
-void pm_free(pm_page_node *);
+void pm_free(pm_page_node *node);
 
 #endif

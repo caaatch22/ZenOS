@@ -26,13 +26,13 @@ struct pagetable {
 
 typedef struct pagetable* pagetable_t;
 
-uint64_t *pte_fetch(pagetable_t, uint64_t);
+uint64_t *pte_fetch(pagetable_t pt, uint64_t va);
 
 void va_page_bind(pagetable_t pt, uint64_t va, uint64_t pa, uint64_t PTE_PERM);
 
 void va_page_bind_range(pagetable_t pt, uint64_t va, uint64_t pa, uint64_t size, uint64_t PTE_PERM);
 
-void kvminithart();
+void kernel_vmenable();
 
 void kernel_vminit();
 

@@ -73,6 +73,6 @@ struct trapframe {
   /* 280 */ uint64_t t6;
 };
 
-cpu_status *mycpu(void);
+cpu_status *mycpu();
 
 #endif

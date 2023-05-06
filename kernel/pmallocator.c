@@ -1,4 +1,3 @@
-//allocator to allocate physical mem
 #include "defs.h"
 #include "pmallocator.h"
 #include "cpu.h"
@@ -9,14 +8,14 @@ pm_freelist physical_mem;
 
 extern char ekernel[];
 
-void pm_freelist_init(void)
+void pm_freelist_init()
 {
   physical_mem.head = NULL;
 
   pm_page_node *node = (pm_page_node *)PAGE_ROUNDUP(ekernel);
   while(node < (pm_page_node *)PAGE_ROUNDDOWN(PHYSICAL_MEM_END)) {
     pm_free(node);
-    node = (uint64_t)node + PAGE_SIZE;
+    node = (pm_page_node*)((uint64_t)node + PAGE_SIZE);
   }
 }
 
