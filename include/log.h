@@ -55,66 +55,66 @@ enum LOG_COLOR {
 #endif // LOG_LEVEL_TRACE
 
 #if defined(USE_LOG_ERROR)
-#define LOG_ERROR(fmt, ...)                                                       \
-  do {                                                                   \
-    int tid = threadid();                                          \
-    print("\x1b[%dm[%s %d]" fmt "\x1b[0m\n", RED, "ERROR", tid,   \
-           ##__VA_ARGS__);                                         \
+#define LOG_ERROR(fmt, ...)                                               \
+  do {                                                                    \
+    int tid = threadid();                                                 \
+    print("\x1b[%dm[%s %d] %s:%d: " fmt "\x1b[0m\n", RED, "ERROR", tid,   \
+           __FILE__, __LINE__, ##__VA_ARGS__);                            \
   } while (0)
 #else
 #define LOG_ERROR(fmt, ...) dummy(0, ##__VA_ARGS__)
 #endif // USE_LOG_ERROR
 
 #if defined(USE_LOG_WARN)
-#define LOG_WARN(fmt, ...)                                                        \
-  do {                                                                   \
-    int tid = threadid();                                          \
-    print("\x1b[%dm[%s %d]" fmt "\x1b[0m\n", YELLOW, "WARN", tid, \
-          ##__VA_ARGS__);                                         \
+#define LOG_WARN(fmt, ...)                                                \
+  do {                                                                    \
+    int tid = threadid();                                                 \
+    print("\x1b[%dm[%s %d] %s:%d: " fmt "\x1b[0m\n", YELLOW, "WARN", tid, \
+          __FILE__, __LINE__, ##__VA_ARGS__);                             \
   } while (0)
 #else
 #define LOG_WARN(fmt, ...) dummy(0, ##__VA_ARGS__)
 #endif // USE_LOG_WARN
 
 #if defined(USE_LOG_INFO)
-#define LOG_INFO(fmt, ...)                                                        \
-  do {                                                                   \
-    int tid = threadid();                                          \
-    print("\x1b[%dm[%s %d]" fmt "\x1b[0m\n", BLUE, "INFO", tid,   \
-          ##__VA_ARGS__);                                         \
+#define LOG_INFO(fmt, ...)                                                \
+  do {                                                                    \
+    int tid = threadid();                                                 \
+    print("\x1b[%dm[%s %d] %s:%d: " fmt "\x1b[0m\n", BLUE, "INFO", tid,   \
+          __FILE__, __LINE__, ##__VA_ARGS__);                             \
   } while (0)
 #else
 #define LOG_INFO(fmt, ...) dummy(0, ##__VA_ARGS__)
 #endif // USE_LOG_INFO
 
 #if defined(USE_LOG_DEBUG)
-#define LOG_DEBUG(fmt, ...)                                                       \
-  do {                                                                   \
-    int tid = threadid();                                          \
-    print("\x1b[%dm[%s %d]" fmt "\x1b[0m\n", GREEN, "DEBUG", tid, \
-          ##__VA_ARGS__);                                         \
+#define LOG_DEBUG(fmt, ...)                                               \
+  do {                                                                    \
+    int tid = threadid();                                                 \
+    print("\x1b[%dm[%s %d] %s:%d: " fmt "\x1b[0m\n", GREEN, "DEBUG", tid, \
+          __FILE__, __LINE__, ##__VA_ARGS__);                             \
   } while (0)
 #else
 #define LOG_DEBUG(fmt, ...) dummy(0, ##__VA_ARGS__)
 #endif // USE_LOG_DEBUG
 
 #if defined(USE_LOG_TRACE)
-#define LOG_TRACE(fmt, ...)                                                       \
-  do {                                                                   \
-    int tid = threadid();                                          \
-    print("\x1b[%dm[%s %d]" fmt "\x1b[0m\n", GRAY, "TRACE", tid,  \
-          ##__VA_ARGS__);                                         \
+#define LOG_TRACE(fmt, ...)                                               \
+  do {                                                                    \
+    int tid = threadid();                                                 \
+    print("\x1b[%dm[%s %d] %s:%d: " fmt "\x1b[0m\n", GRAY, "TRACE", tid,  \
+          __FILE__, __LINE__, ##__VA_ARGS__);                             \
   } while (0)
 #else
 #define LOG_TRACE(fmt, ...) dummy(0, ##__VA_ARGS__)
 #endif // USE_LOG_TRACE
 
-#define PANIC(fmt, ...)                                                        \
-  do {                                                                   \
-    int tid = threadid();                                          \
+#define PANIC(fmt, ...)                                           \
+  do {                                                            \
+    int tid = threadid();                                         \
     print("\x1b[%dm[%s %d] %s:%d: " fmt "\x1b[0m\n", RED,         \
           "PANIC", tid, __FILE__, __LINE__, ##__VA_ARGS__);       \
-    shutdown();                                                    \
+    shutdown();                                                   \
   } while (0)
 
 
