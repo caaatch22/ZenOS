@@ -15,8 +15,7 @@ OBJCOPY = $(TOOLPREFIX)objcopy
 OBJDUMP = $(TOOLPREFIX)objdump
 GDB = $(TOOLPREFIX)gdb
 
-
-BUILDDIR = build
+OBJDIR = build
 
 
 CFLAGS = \
@@ -44,11 +43,20 @@ CFLAGS += -D LOG_LEVEL_TRACE
 endif
 
 
-all:
-	$(CC) $(CFLAGS) $(KSRCS) $(LSRCS) -o ./build/kernel
+all: $(OBJDIR)
+	$(CC) $(CFLAGS) $(KSRCS) $(LSRCS) -o ./$(OBJDIR)/kernel
 
 qemu: all
-	qemu-system-riscv64 -machine virt -nographic -bios default -m 128M -kernel ./build/kernel
+	qemu-system-riscv64 \
+		-machine virt \
+		-nographic \
+		-bios default \
+		-m 128M \
+		-kernel ./build/kernel
+
+$(OBJDIR):
+	@mkdir -p $(OBJDIR)
 
 clean:
-	rm -rf $(BUILDDIR)
+	rm -rf $(OBJDIR)
+
