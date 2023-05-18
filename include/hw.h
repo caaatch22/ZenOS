@@ -1,5 +1,5 @@
-#ifndef CPU_H
-#define CPU_H
+#ifndef HW_H
+#define HW_H
 //describe cpu and board parameters
 
 #define PHYSICAL_MEM_SIZE (1 << 27) //128M
