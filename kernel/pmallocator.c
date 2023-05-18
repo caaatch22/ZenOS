@@ -1,6 +1,6 @@
 #include "defs.h"
 #include "pmallocator.h"
-#include "cpu.h"
+#include "hw.h"
 #include "string.h"
 #include "log.h"
 

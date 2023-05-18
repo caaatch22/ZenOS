@@ -2,7 +2,7 @@
 #include "sbi.h"
 #include "log.h"
 #include "logo.h"
-#include "cpu.h"
+#include "hw.h"
 #include "status.h"
 #include "string.h"
 #include "pmallocator.h"
@@ -22,7 +22,7 @@ void main(uint64_t mhartid, uint64_t dtb_address)
     print(LOGO);
     clean_kernel_stack();
     pm_freelist_init();
-    
+
     shutdown();
   }
   else {

@@ -1,5 +1,5 @@
 #include "vm.h"
-#include "cpu.h"
+#include "hw.h"
 #include "defs.h"
 #include "log.h"
 #include "riscv.h"
