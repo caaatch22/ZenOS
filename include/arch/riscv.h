@@ -196,6 +196,11 @@ static inline void w_stvec(uint64_t x)
       : "r"(x));
 }
 
+// Supervisor Interrupt Enable
+#define SIE_SEIE (1L << 9)  // external
+#define SIE_STIE (1L << 5)  // timer
+#define SIE_SSIE (1L << 1)  // software
+
 static inline uint64_t r_sie()
 {
   uint64_t x;
