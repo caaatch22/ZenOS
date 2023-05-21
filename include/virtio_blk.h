@@ -2,6 +2,7 @@
 #define VIRTIO_BLK_H
 
 #include "virtio.h"
+#include "spinlock.h"
 
 #define VIRTIO_DEV_ID_BLK 2
 
@@ -16,7 +17,7 @@
 #define VIRTIO_BLK_F_DISCARD 13
 #define VIRTIO_BLK_F_WRITE_ZEROES 14
 
-typedef __attribute__ ((__packed__)) struct virtio_blk_config {
+typedef struct virtio_blk_config {
   uint64_t capacity;
   uint32_t size_max;
   uint32_t seg_max;
@@ -41,7 +42,7 @@ typedef __attribute__ ((__packed__)) struct virtio_blk_config {
   uint32_t max_write_zeroes_seg;
   uint8_t write_zeroes_may_unmap;
   uint8_t unused1[3];
-} virtio_blk_config;
+} __attribute__ ((__packed__)) virtio_blk_config;
 
 #define VIRTIO_BLK_T_IN 0
 #define VIRTIO_BLK_T_OUT 1
@@ -53,12 +54,26 @@ typedef __attribute__ ((__packed__)) struct virtio_blk_config {
 #define VIRTIO_BLK_S_IOERR 1
 #define VIRTIO_BLK_S_UNSUPP 2
 
-typedef __attribute__ ((__packed__)) struct virtio_blk_req {
+typedef struct virtio_blk_req {
   uint32_t type;
   uint32_t reserved;
   uint64_t sector;
   uint8_t *data;
   uint8_t status;
-} virtio_blk_req;
+} __attribute__ ((__packed__))  virtio_blk_req_t;
+
+typedef struct block_dev {
+  virtq_desc_t *desc_table;
+  virtq_avail_t *avail_ring;
+  virtq_used_t *used_ring;
+
+  uint8_t desc_used[VIRTQ_SIZE];
+
+  spinlock_t dev_lock;
+
+
+} block_dev_t;
+
+void virtio_blk_init(void);
 
 #endif

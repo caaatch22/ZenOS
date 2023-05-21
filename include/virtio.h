@@ -2,6 +2,9 @@
 #define VIRTIO_H
 
 #include "defs.h"
+#include "hw.h"
+
+#define VIRTIO_MMIO_REG(offset) ( *(VIRT_MMIO_VIRTIO_BASE + offset) )
 
 #define VIRTIO_MMIO_MAGIC_OFF 0x000
 #define VIRTIO_MMIO_VERSION_OFF 0x004
@@ -49,31 +52,32 @@
 #define VIRTQ_AVAIL_F_NO_INTERRUPT 1
 #define VIRTQ_USED_F_NO_NOTIFY 1
 
-typedef __attribute__ ((__packed__)) struct virtq_desc
+typedef struct virtq_desc
 {
   uint64_t addr;
   uint32_t len;
   uint16_t flags;
   uint16_t next;
-} virtq_desc;
+} __attribute__ ((__packed__)) virtq_desc_t;
 
-typedef __attribute__ ((__packed__)) struct virtq_avail {
+typedef struct virtq_avail {
   uint16_t flags;
   uint16_t idx;
   uint16_t ring[VIRTQ_SIZE];
   uint16_t used_event;
-} virtq_avail;
+} __attribute__ ((__packed__)) virtq_avail_t;
 
-typedef __attribute__ ((__packed__)) struct virtq_used {
+typedef struct virtq_used_elem {
+  uint32_t id;
+  uint32_t len;
+} __attribute__ ((__packed__)) virtq_used_elem_t;
+
+typedef struct virtq_used {
   uint16_t flags;
   uint16_t idx;
   struct virtq_used_elem ring[VIRTQ_SIZE];
   uint16_t avail_event;
-} virtq_used;
+} __attribute__ ((__packed__)) virtq_used_t;
 
-typedef __attribute__ ((__packed__)) struct virtq_used_elem {
-  uint32_t id;
-  uint32_t len;
-} virtq_used_elem;
 
 #endif
