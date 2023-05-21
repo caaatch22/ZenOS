@@ -1,5 +1,5 @@
-#include "console.h"
-#include "sbi.h"
+#include "device/console.h"
+#include "sbi/sbi.h"
 
 void consputc(int c)
 {

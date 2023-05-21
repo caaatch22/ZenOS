@@ -1,8 +1,7 @@
-#include "defs.h"
-#include "pmallocator.h"
-#include "cpu.h"
-#include "string.h"
-#include "log.h"
+#include "common/common.h"
+#include "mm/pmallocator.h"
+#include "utils/string.h"
+#include "arch/hw.h"
 
 pm_freelist physical_mem;
 

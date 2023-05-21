@@ -1,6 +1,6 @@
 #include <stdarg.h>
-#include "console.h"
-#include "defs.h"
+#include "device/console.h"
+#include "common/defs.h"
 
 static char digits[] = "0123456789abcdef";
 

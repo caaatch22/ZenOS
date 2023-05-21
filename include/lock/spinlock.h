@@ -1,13 +1,13 @@
 #ifndef SPINLOCK_H
 #define SPINLOCK_H
 
-#include "defs.h"
-#include "status.h"
+#include "common/defs.h"
+#include "arch/cpu.h"
 
 struct spinlock {
   uint32_t locked;
   char *nickname;
-  cpu_status *holder;
+  struct cpu *holder;
 };
 
 typedef struct spinlock spinlock_t;

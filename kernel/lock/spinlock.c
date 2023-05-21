@@ -1,8 +1,6 @@
-#include "defs.h"
-#include "log.h"
-#include "riscv.h"
-#include "status.h"
-#include "spinlock.h"
+#include "common/common.h"
+#include "arch/riscv.h"
+#include "lock/spinlock.h"
 
 void init_spinlock(spinlock_t *lock,char *name)
 {
@@ -36,7 +34,7 @@ void release_spinlock(spinlock_t *lock)
 
 void push_off()
 {
-  cpu_status *req_cpu = mycpu();
+  struct cpu *req_cpu = mycpu();
   uint64_t prev_intr_status = r_sie();
   w_sie(0ul);
 
@@ -48,7 +46,7 @@ void push_off()
 
 void pop_off()
 {
-  cpu_status *req_cpu = mycpu();
+  struct cpu *req_cpu = mycpu();
   --req_cpu->intr_disable_depth;
   if(req_cpu->intr_disable_depth == 0) {
     w_sie(req_cpu->prev_intr_status);

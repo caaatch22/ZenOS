@@ -1,8 +1,7 @@
 #ifndef SBI_H
 #define SBI_H
 
-#include "defs.h"
-#include "log.h"
+#include "common/common.h"
 
 //legacy functions
 #define SBI_LEGACY_SET_TIMER_EID 0

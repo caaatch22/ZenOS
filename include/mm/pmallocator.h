@@ -1,7 +1,8 @@
 #ifndef PMALLOCATOR_H
 #define PMALLOCATOR_H
 
-#include "defs.h"
+#include "common/defs.h"
+#include "arch/hw.h"
 
 #define PAGE_SIZE (1 << 12) //4KB
 

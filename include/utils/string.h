@@ -1,7 +1,7 @@
 #ifndef STRING_H
 #define STRING_H
 
-#include "defs.h"
+#include "common/defs.h"
 
 int   memcmp(const void* v1, const void* v2, uint32_t n);
 

@@ -2,7 +2,7 @@
 #ifndef RISCV_H
 #define RISCV_H
 
-#include "defs.h"
+#include "common/common.h"
 
 #define MSTATUS_SIE (1 << 1)
 #define MSTATUS_MIE (1 << 3)
@@ -169,7 +169,16 @@ static inline void w_pmpcfg0(uint64_t x)
       : "r"(x));
 }
 
-//following are s-mode csrs
+// following are s-mode csrs
+
+// Supervisor Status Register, sstatus
+
+#define SSTATUS_UIE (1 << 0) // User Interrupt Enable
+#define SSTATUS_SIE (1 << 1) // Supervisor Interrupt Enable
+#define SSTATUS_UPIE (1 << 4) // User Previous Interrupt Enable
+#define SSTATUS_SPIE (1 << 5) // Supervisor Previous Interrupt Enable
+#define SSTATUS_SPP (1 << 8) // Previous mode, 1=Supervisor, 0=User
+
 static inline uint64_t r_stvec()
 {
   uint64_t x;
@@ -322,6 +331,23 @@ static inline void intr_enable()
   w_sstatus(sstatus_scratch);
 }
 */
+
+// read and write tp, the thread pointer, which holds
+// this core's hartid (core number), the index into cpus[].
+static inline uint64_t r_tp()
+{
+  uint64_t x;
+  asm volatile("mv %0, tp"
+               : "=r"(x));
+  return x;
+}
+
+static inline void w_tp(uint64_t x)
+{
+  asm volatile("mv tp, %0"
+               :
+               : "r"(x));
+}
 
 static inline void sfence_vma(void)
 {

@@ -1,5 +1,5 @@
-#include "string.h"
-#include "defs.h"
+#include "utils/string.h"
+#include "common/defs.h"
 
 void* memset(void* dst, int c, uint32_t n) 
 {

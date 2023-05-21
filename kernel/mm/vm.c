@@ -1,9 +1,7 @@
-#include "vm.h"
-#include "cpu.h"
-#include "defs.h"
-#include "log.h"
-#include "riscv.h"
-#include "pmallocator.h"
+#include "mm/vm.h"
+#include "arch/riscv.h"
+#include "arch/hw.h"
+#include "mm/pmallocator.h"
 
 pagetable_t kernel_pagetable;
 

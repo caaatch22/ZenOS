@@ -1,4 +1,4 @@
-#include "sbi.h"
+#include "sbi/sbi.h"
 
 int sbi_legacy_call(uint64_t EID, uint64_t arg0, uint64_t arg1, uint64_t arg2)
 {

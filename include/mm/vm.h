@@ -1,7 +1,7 @@
 #ifndef VM_H
 #define VM_H
 
-#include "defs.h"
+#include "common/defs.h"
 
 #define VA_VPN_MASK (0x1FFul)
 #define VA_VPN_SHIFT(level) (12 + (3 - level) * 9)
