@@ -11,5 +11,9 @@ typedef unsigned int uint32_t;
 
 typedef unsigned long uint64_t;
 
+typedef int bool;
+
+#define TRUE 1
+#define FALSE 0
 
 #endif
