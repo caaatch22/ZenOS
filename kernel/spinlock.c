@@ -11,7 +11,7 @@ void init_spinlock(spinlock_t *lock,char *name)
   lock->holder = 0;
 }
 
-void acqure_spinlock(spinlock_t *lock)
+void acquire_spinlock(spinlock_t *lock)
 {
   push_off();  //disable interrupt
   if((lock->locked == 1) && (lock->holder == mycpu()))
@@ -22,12 +22,10 @@ void acqure_spinlock(spinlock_t *lock)
   lock->holder = mycpu();
   __sync_synchronize();
 
-  pop_off();  //enable interrupt
 }
 
 void release_spinlock(spinlock_t *lock)
 {
-  push_off();
   if(lock->locked == 0)
     PANIC("attempt to release a unlocked spinlock\n");
   lock->locked = 0;
