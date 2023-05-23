@@ -3,6 +3,7 @@
 
 #include "virtio.h"
 #include "spinlock.h"
+#include "buffer.h"
 
 #define VIRTIO_DEV_ID_BLK 2
 
@@ -75,5 +76,7 @@ typedef struct block_dev {
 } block_dev_t;
 
 void virtio_blk_init(void);
+void virtio_blk_read(uint64_t sector, buf_t *);
+void virtio_blk_write(uint64_t sector, buf_t *);
 
 #endif
