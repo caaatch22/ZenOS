@@ -6,6 +6,8 @@
 pagetable_t kernel_pagetable;
 
 extern char etext[];
+extern char trapforward[];
+
 
 uint64_t *pte_fetch(pagetable_t pt, uint64_t va) //do not gaurd the given pte to be vaild or with any permission
 {
@@ -37,8 +39,7 @@ void va_page_bind(pagetable_t pt, uint64_t va, uint64_t pa, uint64_t PTE_PERM)
 {
   if(PTE_PERM & (~(PTE_R|PTE_W|PTE_X)))
     PANIC("illegal permisson indicate");
-
-  if((va & ~(PAGE_SIZE - 1)) || (pa & ~(PAGE_SIZE - 1)))
+  if (!ALIGNED(va) || !ALIGNED(pa))
     PANIC("address not aligned");
 
   uint64_t *pte = pte_fetch(pt, va);
@@ -52,12 +53,12 @@ void va_page_bind(pagetable_t pt, uint64_t va, uint64_t pa, uint64_t PTE_PERM)
 
 void va_page_bind_range(pagetable_t pt, uint64_t va, uint64_t pa ,uint64_t size, uint64_t PTE_PERM)
 {
-  if(PTE_PERM & (~(PTE_R|PTE_W|PTE_X)))
+  // LOG_DEBUG("pagesize=%p", size);
+  if (PTE_PERM & (~(PTE_R | PTE_W | PTE_X)))
     PANIC("illegal perm indicate");
-
-  if((va & ~(PAGE_SIZE - 1)) || (pa & ~(PAGE_SIZE - 1)))
+  if (!ALIGNED(va) || !(ALIGNED(pa)))
     PANIC("address not aligned");
-  if((size & ~(PAGE_SIZE - 1)))
+  if (!ALIGNED(size))
     PANIC("size not aligned");
 
   uint64_t range_end = va + size;
@@ -91,14 +92,18 @@ void kernel_vminit()
   kernel_pagetable = (pagetable_t) pm_alloc();
 
   // map kernel text executable and read-only.
+  LOG_DEBUG("kernel text va=%p -> [%p, %p]", PHYSICAL_MEM_BASE
+            , PHYSICAL_MEM_BASE, (uint64_t)etext);
   va_page_bind_range(kernel_pagetable, PHYSICAL_MEM_BASE, PHYSICAL_MEM_BASE, (uint64_t)etext - PHYSICAL_MEM_BASE, PTE_R | PTE_X);
 
   // map kernel data and the physical RAM we'll make use of.
+  LOG_DEBUG("kernel data va=%p -> [%p, %p]", etext, etext, PHYSICAL_MEM_END);
   va_page_bind_range(kernel_pagetable, (uint64_t)etext, (uint64_t)etext, PHYSICAL_MEM_END - (uint64_t)etext, PTE_R | PTE_W);
 
   // map the trampoline for trap entry/exit to
   // the highest virtual address in the kernel.
-  // kvmmap(kernel_pagetable, TRAMPOLINE, (uint64_t)trampoline, PAGE_SIZE, PTE_R | PTE_X);
+  LOG_DEBUG("trampoline va=%p -> [%p, %p]", TRAPFORWARD, trapforward, trapforward + PAGE_SIZE);
+  va_page_bind_range(kernel_pagetable, TRAPFORWARD, (uint64_t)trapforward, PAGE_SIZE, PTE_R | PTE_X);
 
   // allocate and map a kernel stack for each process.
   // proc_mapstacks(kernel_pagetable);
