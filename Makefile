@@ -49,10 +49,14 @@ all: $(OBJDIR)
 qemu: all
 	qemu-system-riscv64 \
 		-machine virt \
+		-smp 2 \
 		-nographic \
 		-bios default \
 		-m 128M \
-		-kernel ./build/kernel
+		-kernel ./build/kernel \
+		-drive file=local/sdcard.img,if=none,format=raw,id=x0 \
+		-device virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0 \
+		-initrd local/initrd.img
 
 $(OBJDIR):
 	@mkdir -p $(OBJDIR)
