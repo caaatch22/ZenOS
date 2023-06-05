@@ -4,7 +4,6 @@
 #include "common/defs.h"
 #include "arch/hw.h"
 
-#define PAGE_SIZE (1 << 12) //4KB
 
 #define PAGE_ROUNDUP(x)  (((uint64_t)x + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1))
 #define PAGE_ROUNDDOWN(x) ((uint64_t)x & ~(PAGE_SIZE - 1))

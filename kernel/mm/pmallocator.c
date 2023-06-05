@@ -7,7 +7,7 @@ pm_freelist physical_mem;
 
 extern char ekernel[];
 
-void pm_freelist_init()
+void pm_init()
 {
   physical_mem.head = NULL;
 

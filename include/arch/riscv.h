@@ -286,6 +286,14 @@ static inline void w_scause(uint64_t x)
       : "r"(x));
 }
 
+// Supervisor Trap Value
+static inline uint64_t r_stval() {
+  uint64_t x;
+  asm volatile("csrr %0, stval"
+               : "=r"(x));
+  return x;
+}
+
 static inline uint64_t r_satp()
 {
   uint64_t x;
