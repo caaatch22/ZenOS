@@ -1,5 +1,5 @@
-#include "sleeplock.h"
-#include "spinlock.h"
+#include "lock/sleeplock.h"
+#include "lock/spinlock.h"
 
 sleep(void *, spinlock_t *);
 wakeup(void *);

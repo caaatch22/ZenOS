@@ -2,9 +2,9 @@
 #define FAT32_H
 
 #include "lock/sleeplock.h"
-#include "fstat.h"
-#include "vfs.h"
-#include "buffer.h"
+#include "fs/fstat.h"
+#include "fs/vfs.h"
+#include "fs/buffer.h"
 
 #define wchar uint16_t
 
@@ -71,10 +71,10 @@ struct fat32_dentry {  // 目录项，每个32字节（256bit）
 };
 
 
-struct fat32_sb *fat32_init(void *boot_sector);
+struct fat32_sb *fat32_init(char *boot_sector);
 struct inode *fat32_root_init(struct super_block *sb);
 struct inode *fat_lookup_dir(struct inode *dir, char *filename, uint32_t *poff);
-struct inode *fat_alloc_inode(struct superblock *sb);
+struct inode *fat_alloc_inode(struct super_block *sb);
 void fat_destroy_inode(struct inode *ip);
 struct inode *fat_alloc_entry(struct inode *dir, char *name, int mode);
 int fat_update_entry(struct inode *ip);

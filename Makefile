@@ -83,7 +83,7 @@ kernel/kernel_app.ld: scripts/kernelld.py
 
 generate_link: kernel/kernel_app.ld kernel/link_app.S
 
-build_kernel: generate_link build_os
+build_kernel: build_os
 
 build_os: $(OBJS)
 	$(LD) $(LDFLAGS) -T kernel/kernel_app.ld -o $(OBJDIR)/os $(OBJS)

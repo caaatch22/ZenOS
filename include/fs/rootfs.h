@@ -1,9 +1,9 @@
 #ifndef ROOTFS_H
 #define ROOTFS_H
 
-#include "spinlock.h"
-#include "defs.h"
-#include "buffer.h"
+#include "lock/spinlock.h"
+#include "common/defs.h"
+#include "fs/buffer.h"
 
 typedef struct rootfs_dev {
   struct spinlock dev_lock;

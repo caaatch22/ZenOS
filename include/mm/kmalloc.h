@@ -1,7 +1,7 @@
 #ifndef KMALLOC_H
 #define KMALLOC_H
 
-#include "defs.h"
+#include "common/defs.h"
 
 /*
  * init allocator

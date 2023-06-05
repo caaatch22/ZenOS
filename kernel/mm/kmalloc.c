@@ -4,12 +4,11 @@
  * effect of the hardware-cache by excluding the CPU struct in the kmem_cache.
  */
 
-#include "defs.h"
-#include "hw.h"
-#include "pmallocator.h"
-#include "kmalloc.h"
-#include "spinlock.h"
-#include "log.h"
+#include "common/common.h"
+#include "arch/hw.h"
+#include "mm/pmallocator.h"
+#include "mm/kmalloc.h"
+#include "lock/spinlock.h"
 
 
 #define KMEM_OBJ_MIN_SIZE   ((uint64_t)32)

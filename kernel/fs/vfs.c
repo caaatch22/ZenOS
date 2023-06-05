@@ -1,8 +1,8 @@
-#include "defs.h"
-#include "vfs.h"
-#include "log.h"
-#include "status.h"
-#include "kmalloc.h"
+#include "common/common.h"
+#include "fs/vfs.h"
+#include "proc/proc.h"
+#include "arch/cpu.h"
+#include "mm/kmalloc.h"
 // Virtual File System (only supports FAT32 so far).
 
 extern struct super_block rootfs;
@@ -441,7 +441,7 @@ static char *skipelem(char *path, char *name, int max)	//get a partition in path
 static struct inode *lookup_path(char *path, int parent, char *name, struct inode *ip_spec)
 {
 	struct inode *ip, *next;  // 'ip' is the inode we are looking for
-	struct proc_status *p = myproc();
+	struct proc *p = myproc();
 	if (*path == '/') {  // 绝对路径
 		if(strncmp("/proc/self/exe", path, 15) == 0){  // 我们没有这个伪文件系统，通过另一种方式实现。
 			if( p->elf )

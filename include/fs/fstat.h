@@ -1,8 +1,8 @@
 #ifndef FSTAT_H
 #define FSTAT_H
 
-#include "defs.h"
-#include "vfs.h"
+#include "common/defs.h"
+#include "fs/vfs.h"
 
 // xv6自用stat->mode
 #define T_DIR     1   // Directory

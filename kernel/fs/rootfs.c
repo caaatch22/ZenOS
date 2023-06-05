@@ -1,9 +1,9 @@
-#include "hw.h"
-#include "buffer.h"
-#include "defs.h"
-#include "string.h"
-#include "rootfs.h"
-#include "spinlock.h"
+#include "arch/hw.h"
+#include "fs/buffer.h"
+#include "utils/string.h"
+#include "fs/rootfs.h"
+#include "lock/spinlock.h"
+#include "common/common.h"
 
 rootfs_dev_t rootfs_dev;
 

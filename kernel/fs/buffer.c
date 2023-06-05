@@ -1,7 +1,7 @@
-#include "buffer.h"
+#include "fs/buffer.h"
 #include "common/common.h"
 #include "mm/pmallocator.h"
-#include "spinlock.h"
+#include "lock/spinlock.h"
 #include "fs/virtio.h"
 
 buf_list_t blk_buf_list;

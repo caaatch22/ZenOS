@@ -1,10 +1,10 @@
 #ifndef VFS_H
 #define VFS_H
 
-#include "defs.h"
-#include "fstat.h"
-#include "sleeplock.h"
-#include "spinlock.h"
+#include "common/defs.h"
+#include "fs/fstat.h"
+#include "lock/sleeplock.h"
+#include "lock/spinlock.h"
 
 #define MAX_DEV_TYPE 16
 #define MAX_DEV_NUM 32
@@ -60,7 +60,7 @@ struct file_op {
 
 
 struct super_block {
-	uint32_t				devnum;		//
+	uint32_t				dev_num;		//
 	int					ref;		// sum of refs of all its inodes
 	uint32_t				blocksz;	// size of disk block
 	void				*real_sb;	// real super_block, which in the format of their FS(eg:FAT32、ext4)

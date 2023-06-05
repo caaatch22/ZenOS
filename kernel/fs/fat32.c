@@ -1,6 +1,6 @@
-#include "fat32.h"
-#include "vfs.h"
-#include "log.h"
+#include "fs/fat32.h"
+#include "fs/vfs.h"
+#include "common/common.h"
 
 /* On-disk directory entry structure */
 /* Fields that start with "_" are something we don't use */
@@ -382,7 +382,7 @@ fail:
  * @param   n           number of bytes to read
  * @return              the total bytes that have been read
  */
-int fat_read_file(struct inode *ip, int user_dst, uint64_t dst, uint32_t off, uint32_t n)
+int fat_read_file(struct inode *ip, uint32_t user_dst, uint64_t dst, uint32_t off, uint32_t n)
 {
     struct fat32_dentry *entry = i2fat(ip);
 
@@ -423,7 +423,7 @@ int fat_read_file(struct inode *ip, int user_dst, uint64_t dst, uint32_t off, ui
  * @return              the total bytes that have been written
  *                      or -1 if completely fail
  */
-int fat_write_file(struct inode *ip, int user_src, uint64_t src, uint32_t off, uint32_t n)
+int fat_write_file(struct inode *ip, uint32_t user_src, uint64_t src, uint32_t off, uint32_t n)
 {
     struct fat32_dentry *entry = i2fat(ip);
 

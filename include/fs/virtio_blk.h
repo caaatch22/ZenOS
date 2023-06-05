@@ -1,9 +1,9 @@
 #ifndef VIRTIO_BLK_H
 #define VIRTIO_BLK_H
 
-#include "virtio.h"
-#include "spinlock.h"
-#include "buffer.h"
+#include "fs/virtio.h"
+#include "lock/spinlock.h"
+#include "fs/buffer.h"
 
 #ifndef VIRTIO_QUEUE_SIZE
 #define VIRTIO_QUEUE_SIZE (BUFFER_MAX_NUM & ~1l)

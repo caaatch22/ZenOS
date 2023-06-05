@@ -1,10 +1,10 @@
-#include "virtio.h"
-#include "virtio_blk.h"
-#include "log.h"
-#include "buffer.h"
-#include "spinlock.h"
-#include "hw.h"
-#include "vm.h"
+#include "fs/virtio.h"
+#include "fs/virtio_blk.h"
+#include "common/common.h"
+#include "fs/buffer.h"
+#include "lock/spinlock.h"
+#include "arch/hw.h"
+#include "mm/vm.h"
 
 extern buf_list_t virtio_blk_buf_list;
 virtio_blk_dev_t virtio_blk_dev;
