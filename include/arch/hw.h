@@ -1,0 +1,17 @@
+#ifndef HW_H
+#define HW_H
+//describe cpu and board parameters
+
+#define PHYSICAL_MEM_SIZE (1 << 27) //128M
+#define PHYSICAL_MEM_BASE 0x80000000
+#define PHYSICAL_MEM_END (PHYSICAL_MEM_BASE + PHYSICAL_MEM_SIZE)
+
+#define NCPU 2
+
+#define VIRT_MMIO_VIRTIO_BASE 0x10001000
+#define VIRT_MMIO_VIRTIO_SIZE 0x1000
+
+#define VIRT_MMIO_PLIC_BASE 0xc000000
+#define VIRT_MMIO_PLIC_SIZE (0x200000 + NCPU * 0x1000)
+
+#endif

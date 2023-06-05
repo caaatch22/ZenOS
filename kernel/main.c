@@ -1,18 +1,17 @@
-#include "defs.h"
-#include "sbi.h"
-#include "log.h"
+#include "common/common.h"
+#include "sbi/sbi.h"
+#include "utils/string.h"
+#include "mm/pmallocator.h"
 #include "logo.h"
-#include "cpu.h"
-#include "status.h"
-#include "string.h"
-#include "pmallocator.h"
 
 extern char bss[];
 extern char ebss[];
-void clean_kernel_stack();
+
+void clean_kernel_stack() {
+  memset(bss, ebss - bss, 0);
+}
 
 volatile uint64_t booted = 0;
-cpu_status CPU_STATUS[NCPU];
 
 void main(uint64_t mhartid, uint64_t dtb_address)
 {
@@ -28,11 +27,6 @@ void main(uint64_t mhartid, uint64_t dtb_address)
   else {
     //other cores
   }
-}
-
-void clean_kernel_stack()
-{
-  memset(bss, ebss - bss, 0);
 }
 
 // TODO: add this to proc
