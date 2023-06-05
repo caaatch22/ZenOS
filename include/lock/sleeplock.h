@@ -3,13 +3,14 @@
 
 #include "lock/spinlock.h"
 #include "arch/cpu.h"
+#include "proc/proc.h"
 
 typedef struct sleeplock {
   uint8_t locked;
   struct spinlock spinlock;
 
   char *nickname;
-  proc_status *holder;
+  struct proc *holder;
 } sleeplock_t;
 
 void init_sleeplock(sleeplock_t *, char *);

@@ -1,7 +1,7 @@
 #ifndef FAT32_H
 #define FAT32_H
 
-#include "sleeplock.h"
+#include "lock/sleeplock.h"
 #include "fstat.h"
 #include "vfs.h"
 #include "buffer.h"

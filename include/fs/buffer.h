@@ -1,8 +1,8 @@
 #ifndef BUFFER_H
 #define BUFFER_H
 
-#include "pmallocator.h"
-#include "spinlock.h"
+#include "mm/pmallocator.h"
+#include "lock/spinlock.h"
 
 #define BUFFER_SIZE 512
 #define BUFFER_PAGE_OCCUPY 5
