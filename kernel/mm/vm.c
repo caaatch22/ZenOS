@@ -26,10 +26,10 @@ uint64_t *pte_fetch(pagetable_t pt, uint64_t va) //do not gaurd the given pte to
 
         *pte |= PTE_V;
         pt = (pagetable_t)PTE2PA_PPN(*pte);
-      }
+      } else if (*pte == 0)
+        PANIC("unable to make a lower pagetable");
     }
-    if(*pte == 0)
-      PANIC("unable to make a lower pagetable");
+      
   }
 
   return pte;
@@ -108,4 +108,20 @@ void kernel_vminit()
   // allocate and map a kernel stack for each process.
   // proc_mapstacks(kernel_pagetable);
 
+}
+
+
+// create an empty user page table.
+// map trampoline page
+// returns 0 if out of memory.
+pagetable_t
+create_empty_pagetable()
+{
+  pagetable_t pagetable;
+  pagetable = (pagetable_t)pm_alloc();
+  // do not need to memset, cause pm_alloc has memset that
+  // if (pagetable != NULL) {
+  //   memset(pagetable, 0, PGSIZE);
+  // }
+  return pagetable;
 }

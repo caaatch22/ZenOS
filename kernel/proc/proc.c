@@ -6,6 +6,7 @@
 #include "utils/string.h"
 #include "trap/trap.h"
 #include "mm/vm.h"
+#include "mm/pmallocator.h"
 
 struct proc pool[NPROC];
 

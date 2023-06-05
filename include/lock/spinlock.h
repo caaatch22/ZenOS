@@ -15,5 +15,7 @@ typedef struct spinlock spinlock_t;
 void init_spinlock(spinlock_t* lock, char* name);
 void push_off();
 void pop_off();
+void acqure_spinlock(spinlock_t *lock);
+void release_spinlock(spinlock_t *lock);
 
 #endif

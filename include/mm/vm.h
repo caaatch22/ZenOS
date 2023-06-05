@@ -36,4 +36,6 @@ void kernel_vmenable();
 
 void kernel_vminit();
 
+pagetable_t create_empty_pagetable();
+
 #endif

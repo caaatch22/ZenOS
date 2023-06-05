@@ -3,6 +3,7 @@
 #include "proc/proc.h"
 #include "arch/hw.h"
 #include "utils/string.h"
+#include "mm/pmallocator.h"
 
 static int app_cur, app_num;
 static uint64_t *app_info_ptr;
