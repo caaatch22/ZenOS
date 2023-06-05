@@ -1,9 +1,8 @@
 #include "buffer.h"
-#include "defs.h"
-#include "pmallocator.h"
+#include "common/common.h"
+#include "mm/pmallocator.h"
 #include "spinlock.h"
-#include "log.h"
-#include "virtio.h"
+#include "fs/virtio.h"
 
 buf_list_t blk_buf_list;
 

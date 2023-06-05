@@ -1,10 +1,10 @@
 #ifndef VIRTIO_H
 #define VIRTIO_H
 
-#include "defs.h"
-#include "hw.h"
-#include "virtio_blk.h"
-#include "buffer.h"
+#include "common/common.h"
+#include "arch/hw.h"
+#include "fs/virtio_blk.h"
+#include "fs/buffer.h"
 
 #ifndef VIRTIO_QUEUE_SIZE
 #define VIRTIO_QUEUE_SIZE (BUFFER_MAX_NUM & ~1l)

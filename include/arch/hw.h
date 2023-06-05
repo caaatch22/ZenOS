@@ -26,10 +26,6 @@
 #define INITRD_START 0x84200000
 #define INITRD_END 0x86a00000
 
-<<<<<<< HEAD
-
-#endif
-=======
 // qemu puts platform-level interrupt controller (PLIC) here.
 #define PLIC 0x0c000000L       // 192 MB
 #define PLIC_PRIORITY (PLIC + 0x0)
@@ -41,7 +37,6 @@
 #define PLIC_MCLAIM(hart) (PLIC + 0x200004 + (hart)*0x2000)
 #define PLIC_SCLAIM(hart) (PLIC + 0x201004 + (hart)*0x2000)
 
-#define USTACK_BOTTOM 0xC0000000   // 3GB, user stack lower address 
+#define USTACK_BOTTOM 0xC0000000   // 3GB, user stack lower address
 
 #endif
->>>>>>> main

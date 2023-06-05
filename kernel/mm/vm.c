@@ -29,10 +29,7 @@ uint64_t *pte_fetch(pagetable_t pt, uint64_t va) //do not gaurd the given pte to
       } else if (*pte == 0)
         PANIC("unable to make a lower pagetable");
     }
-<<<<<<< HEAD
-=======
-      
->>>>>>> main
+
   }
 
   return pte;
