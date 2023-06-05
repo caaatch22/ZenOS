@@ -2,6 +2,7 @@
 #define STATUS_H
 
 #include"defs.h"
+#include "vfs.h"
 
 typedef struct context
 {
@@ -31,7 +32,9 @@ typedef struct cpu_status
 typedef struct proc_status
 {
   uint64_t proc_id;
-  //TODO
+  struct inode *cwd;
+  struct inode *elf;
+  // TODO
 } proc_status;
 
 struct trapframe {

@@ -6,6 +6,7 @@
 #include "status.h"
 #include "string.h"
 #include "pmallocator.h"
+#include "virtio_blk.h"
 
 extern char bss[];
 extern char ebss[];
@@ -22,6 +23,7 @@ void main(uint64_t mhartid, uint64_t dtb_address)
     print(LOGO);
     clean_kernel_stack();
     pm_freelist_init();
+    virtio_blk_init();
 
     shutdown();
   }
