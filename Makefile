@@ -86,7 +86,7 @@ generate_link: kernel/kernel_app.ld kernel/link_app.S
 build_kernel: build_os
 
 build_os: $(OBJS)
-	$(LD) $(LDFLAGS) -T kernel/kernel_app.ld -o $(OBJDIR)/os $(OBJS)
+	$(LD) $(LDFLAGS) -T kernel/kernel.lds -o $(OBJDIR)/os $(OBJS)
 	$(OBJDUMP) -S $(OBJDIR)/os > $(OBJDIR)/os.asm
 	$(OBJDUMP) -t $(OBJDIR)/os | sed '1,/SYMBOL TABLE/d; s/ .* / /; /^$$/d' > $(OBJDIR)/os.sym
 	@echo 'Build kernel done'

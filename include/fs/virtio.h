@@ -3,11 +3,12 @@
 
 #include "common/common.h"
 #include "arch/hw.h"
-#include "fs/virtio_blk.h"
-#include "fs/buffer.h"
+// #include "fs/virtio_blk.h"
+// #include "fs/buffer.h"
 
 #ifndef VIRTIO_QUEUE_SIZE
-#define VIRTIO_QUEUE_SIZE (BUFFER_MAX_NUM & ~1l)
+// BUFFER_MAX_NUM 32
+#define VIRTIO_QUEUE_SIZE (32)
 #define VIRTIO_DESC_RING_SIZE (16 * VIRTIO_QUENE_SIZE)
 #define VIRTIO_AVAIL_RING_SIZE (6 + 2 * VIRTIO_QUENE_SIZE)
 #define VIRTIO_USED_RING_SIZE (6 + 8 * VIRTIO_QUENE_SIZE)

@@ -1,8 +1,9 @@
 #include "lock/sleeplock.h"
 #include "lock/spinlock.h"
+#include "proc/proc.h"
 
-sleep(void *, spinlock_t *);
-wakeup(void *);
+// sleep(void *, spinlock_t *);
+// wakeup(void *);
 
 void init_sleeplock(sleeplock_t *lock, char *name)
 {
@@ -19,7 +20,7 @@ void acquire_sleeplock(sleeplock_t *lock)
     sleep(lock, &lock->spinlock);
   }
 
-  lock->holder = myproc();
+  lock->holder = curr_proc();
   lock->locked = 1;
 
   release_spinlock(&lock->spinlock);

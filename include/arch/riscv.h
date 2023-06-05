@@ -345,6 +345,13 @@ static inline void intr_enable()
 }
 */
 
+static inline uint64_t r_sp() {
+  uint64_t x;
+  asm volatile("mv %0, sp"
+               : "=r"(x));
+  return x;
+}
+
 // read and write tp, the thread pointer, which holds
 // this core's hartid (core number), the index into cpus[].
 static inline uint64_t r_tp()
@@ -360,6 +367,13 @@ static inline void w_tp(uint64_t x)
   asm volatile("mv tp, %0"
                :
                : "r"(x));
+}
+
+static inline uint64_t r_ra() {
+  uint64_t x;
+  asm volatile("mv %0, ra"
+               : "=r"(x));
+  return x;
 }
 
 static inline void sfence_vma(void)

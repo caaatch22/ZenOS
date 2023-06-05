@@ -17,7 +17,5 @@ void acquire_spinlock(spinlock_t *);
 void release_spinlock(spinlock_t *);
 void push_off();
 void pop_off();
-void acqure_spinlock(spinlock_t *lock);
-void release_spinlock(spinlock_t *lock);
 
 #endif

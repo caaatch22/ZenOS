@@ -5,6 +5,8 @@
 #include "lock/spinlock.h"
 #include "arch/hw.h"
 #include "mm/vm.h"
+#include "utils/string.h"
+#include "proc/proc.h"
 
 extern buf_list_t virtio_blk_buf_list;
 virtio_blk_dev_t virtio_blk_dev;
@@ -55,7 +57,7 @@ void virtio_blk_init(void)
   if(max_num < VIRTIO_QUEUE_SIZE)
     PANIC("device queue size too small");
   *VIRTIO_MMIO_REG(VIRTIO_MMIO_QUEUE_NUM_OFF) = VIRTIO_QUEUE_SIZE;
-  memset(&virtio_blk_dev.ring_page, 0, sizeof(virtio_blk_dev.ring_page));
+  memset((void*)&virtio_blk_dev.ring_page, 0, sizeof(virtio_blk_dev.ring_page));
   *VIRTIO_MMIO_REG(VIRTIO_MMIO_QUEUE_PFN_OFF) = ((uint64_t)&virtio_blk_dev.ring_page) >> PA_PPN_SHIFT;
 
   for(uint32_t i = 0; i < VIRTIO_QUEUE_SIZE; i++)
@@ -65,7 +67,7 @@ void virtio_blk_init(void)
 }
 
 // find a free descriptor, mark it non-free, return its index.
-uint32_t desc_alloc()
+uint32_t alloc_desc()
 {
   for(int i = 0; i < VIRTIO_QUEUE_SIZE; i++) {
     if(virtio_blk_dev.desc_free[i]){
@@ -114,7 +116,7 @@ void virtio_disk_rw(buf_t *buf, uint32_t write)
 {
   uint64_t sector = buf->sector;
 
-  acquire(&virtio_blk_dev.dev_lock);
+  acquire_spinlock(&virtio_blk_dev.dev_lock);
 
   // the spec says that legacy block operations use three
   // descriptors: one for type/reserved/sector, one for
@@ -178,18 +180,18 @@ void virtio_disk_rw(buf_t *buf, uint32_t write)
   virtio_blk_dev.info[idx[0]].buf = 0;
   free_chain(idx[0]);
 
-  release(&virtio_blk_dev.dev_lock);
+  release_spinlock(&virtio_blk_dev.dev_lock);
 }
 
 void virtio_blk_intr()
 {
-  acquire(&virtio_blk_dev.dev_lock);
+  acquire_spinlock(&virtio_blk_dev.dev_lock);
 
   while((virtio_blk_dev.index % VIRTIO_QUEUE_SIZE) != (virtio_blk_dev.ring_page.ring.used_q.idx % VIRTIO_QUEUE_SIZE)){
     int idx = virtio_blk_dev.ring_page.ring.used_q.ring[virtio_blk_dev.ring_page.ring.used_q.idx].id;
 
     if(virtio_blk_dev.info[idx].status != 0)
-      panic("virtio_disk_intr status");
+      PANIC("virtio_disk_intr status");
 
     virtio_blk_dev.info[idx].buf->read_pending = 0;   // disk is done with buf
     wakeup(virtio_blk_dev.info[idx].buf);
@@ -198,5 +200,5 @@ void virtio_blk_intr()
   }
   *VIRTIO_MMIO_REG(VIRTIO_MMIO_INTR_ACK_OFF) = *VIRTIO_MMIO_REG(VIRTIO_MMIO_INTR_STATUS_OFF) & 0x3;
 
-  release(&virtio_blk_dev.dev_lock);
+  release_spinlock(&virtio_blk_dev.dev_lock);
 }

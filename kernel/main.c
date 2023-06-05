@@ -7,6 +7,7 @@
 #include "proc/proc.h"
 #include "trap/trap.h"
 #include "logo.h"
+#include "fs/virtio_blk.h"
 
 extern char bss[];
 extern char ebss[];

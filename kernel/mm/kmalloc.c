@@ -58,11 +58,11 @@ struct spinlock kmem_table_lock;
 #define ROUNDUP16(n) \
 	(((n) + 15) & ~0x0f)
 
-// as kmalloc() use allocpage() and freepage,
+// as kmalloc() use pm_alloc() and pm_free,
 // kmallocinit() should be called at least after kpminit()
 void kmallocinit(void) {
 	// init adam
-	initlock(&(kmem_adam.lock), "kmem_adam");
+	init_spinlock(&(kmem_adam.lock), "kmem_adam");
 	kmem_adam.list = NULL;
 	kmem_adam.next = NULL;
 	kmem_adam.npages = 0;
@@ -76,10 +76,10 @@ void kmallocinit(void) {
 	}
 	int hash = _hash(kmem_adam.obj_size);
 	kmem_table[hash] = &kmem_adam;
-	initlock(&kmem_table_lock, "kmem_table");
+	init_spinlock(&kmem_table_lock, "kmem_table");
 
-	// __debug_info("kmallocinit", "KMEM_NODE_FIX: %d\n", KMEM_NODE_FIX);
-	// __debug_info("kmalloc", "init\n");
+	// LOG_INFO("kmallocinit", "KMEM_NODE_FIX: %d\n", KMEM_NODE_FIX);
+	// LOG_INFO("kmalloc", "init\n");
 }
 
 // the question comes that whether we should free an allocator?
@@ -110,12 +110,12 @@ static struct kmem_allocator *get_allocator(uint64_t raw_size) {
 	}
 
 	// enter critical section
-	acquire(&kmem_table_lock);
+	acquire_spinlock(&kmem_table_lock);
 	// if the previous update have created the allocator
 	// needed here
 	if (NULL != kmem_table[hash] &&
 			kmem_table[hash]->obj_size == roundup_size) {
-		release(&kmem_table_lock);
+		release_spinlock(&kmem_table_lock);
 		return kmem_table[hash];
 	}
 
@@ -126,7 +126,7 @@ static struct kmem_allocator *get_allocator(uint64_t raw_size) {
 	// not enter `critical section` when calling `get_allocator()`
 	struct kmem_allocator *tmp = _malloc_allocator();
 	if (NULL != tmp) {
-		initlock(&(tmp->lock), "kmem_alloc");
+		init_spinlock(&(tmp->lock), "kmem_alloc");
 		tmp->list = NULL;
 		tmp->obj_size = roundup_size;
 		tmp->npages = 0;
@@ -135,7 +135,7 @@ static struct kmem_allocator *get_allocator(uint64_t raw_size) {
 		kmem_table[hash] = tmp;
 	}
 
-	release(&kmem_table_lock);
+	release_spinlock(&kmem_table_lock);
 	// leave critical section
 
 	return tmp;
@@ -144,34 +144,34 @@ static struct kmem_allocator *get_allocator(uint64_t raw_size) {
 void *kmalloc(uint32_t size) {
 	// border check for `size`
 	if (KMEM_OBJ_MIN_SIZE > size) {
-		__debug_warn("kmalloc", "size %d too small, reset to %d\n", size, KMEM_OBJ_MIN_SIZE);
+		LOG_WARN("kmalloc", "size %d too small, reset to %d\n", size, KMEM_OBJ_MIN_SIZE);
 		size = KMEM_OBJ_MIN_SIZE;
 	}
 	else if (KMEM_OBJ_MAX_SIZE < size) {
-		__debug_error("kmalloc", "size %d out of border\n", size);
+		LOG_DEBUG("kmalloc", "size %d out of border\n", size);
 		return NULL;
 	}
 	struct kmem_allocator *alloc = get_allocator(size);
 
 	// if failed to alloc
 	if (NULL == alloc) {
-		__debug_error("kmalloc", "fail to get allocator\n");
+		LOG_DEBUG("kmalloc", "fail to get allocator\n");
 		return NULL;
 	}
 
 	// enter critical section `alloc`
-	acquire(&(alloc->lock));
+	acquire_spinlock(&(alloc->lock));
 
 	// if no page available
 	if (NULL == alloc->list) {
-		struct kmem_node *tmp = (struct kmem_node*)allocpage();
+		struct kmem_node *tmp = (struct kmem_node*)pm_alloc();
 		if (NULL == tmp) {
-			release(&(alloc->lock));
-			__debug_warn("kmalloc", "fail to allocate a node\n");
+			release_spinlock(&(alloc->lock));
+			LOG_WARN("kmalloc", "fail to allocate a node\n");
 			return NULL;
 		}
 
-		__debug_info("kmalloc", "get one page\n");
+		LOG_INFO("kmalloc", "get one page\n");
 
 		alloc->npages++;
 
@@ -207,7 +207,7 @@ void *kmalloc(uint32_t size) {
 		alloc->list = node->next;
 	}
 
-	release(&(alloc->lock));
+	release_spinlock(&(alloc->lock));
 	// leave critical section `alloc`
 
 	return ret;
@@ -216,14 +216,14 @@ void *kmalloc(uint32_t size) {
 // `addr` must be an address that's allocated before, pass an unallocated
 // address may cause undetectable troubles.
 void kfree(void *addr) {
-	struct kmem_node *node = (struct kmem_node*)PGROUNDDOWN((uint64_t)addr);
+	struct kmem_node *node = (struct kmem_node*)PAGE_ROUNDDOWN((uint64_t)addr);
 	uint8_t avail = ((uint64_t)addr - node->config.obj_addr) / node->config.obj_size;
 
 	struct kmem_allocator *alloc = get_allocator(node->config.obj_size);
 
-	// __debug_info("kfree", "alloc: %p, addr: %p\n", alloc, addr);
+	// LOG_INFO("kfree", "alloc: %p, addr: %p\n", alloc, addr);
 	// enter critical section `alloc`
-	acquire(&(alloc->lock));
+	acquire_spinlock(&(alloc->lock));
 
 	alloc->nobjs--;
 
@@ -231,7 +231,7 @@ void kfree(void *addr) {
 	if (TABLE_END == node->avail) {
 		node->next = alloc->list;
 		alloc->list = node;
-		// __debug_info("kfree", "pickup\n");
+		// LOG_INFO("kfree", "pickup\n");
 	}
 
 	// node should be on alloc->list
@@ -241,7 +241,7 @@ void kfree(void *addr) {
 
 	// if kmem_node has no allocated obj
 	if (0 == node->cnt) {
-		// __debug_info("kfree", "drop\n");
+		// LOG_INFO("kfree", "drop\n");
 		struct kmem_node **pprev = &(alloc->list);
 		struct kmem_node *tmp = alloc->list;
 
@@ -250,8 +250,8 @@ void kfree(void *addr) {
 			tmp = tmp->next;
 		}
 		if (NULL == tmp) {
-			__debug_error("free", "NULL == tmp\n");
-			panic("kfree(): linked list broken!\n");
+			LOG_DEBUG("free", "NULL == tmp\n");
+			PANIC("kfree(): linked list broken!\n");
 		}
 
 		#ifdef DEBUG
@@ -263,27 +263,27 @@ void kfree(void *addr) {
 		#endif
 
 		*pprev = tmp->next;
-		// __debug_info("kfree", "alloc->list = %p\n", alloc->list);
-		// __debug_info("kfree", "tmp = %p\n", tmp);
+		// LOG_INFO("kfree", "alloc->list = %p\n", alloc->list);
+		// LOG_INFO("kfree", "tmp = %p\n", tmp);
 
-		freepage(node);
+		pm_free((pm_page_node *)node);
 		alloc->npages--;
 
-		__debug_info("kmalloc", "free one page\n");
+		LOG_INFO("kmalloc", "free one page\n");
 	}
 
-	release(&(alloc->lock));
+	release_spinlock(&(alloc->lock));
 	// leave critical section `alloc`
 }
 
 // display the content of kmem_allocator
 static void km_view_allocator(struct kmem_allocator *alloc) {
 	// enter critical section
-	acquire(&(alloc->lock));
+	acquire_spinlock(&(alloc->lock));
 
 	LOG_INFO("\nkmem_allocator: size %d, addr: %p taken %d page(s), allocated %d obj(s)\n",
 			alloc->obj_size, alloc, alloc->npages, alloc->nobjs);
-	// __debug_info("kmem_allocator", "size %d, addr: %p\n",
+	// LOG_INFO("kmem_allocator", "size %d, addr: %p\n",
 	// 		alloc->obj_size, alloc);
 	for (struct kmem_node *node = alloc->list; NULL != node; node = node->next) {
 		LOG_INFO(
@@ -297,14 +297,14 @@ static void km_view_allocator(struct kmem_allocator *alloc) {
 			node->avail,
 			node->cnt
 		);
-		printf("\t[");
+		print("\t[");
 		for (uint8_t i = node->avail; TABLE_END != i; i = node->table[i]) {
-			printf("%d ", i);
+			print("%d ", i);
 		}
-		printf("]\n");
+		print("]\n");
 	}
 
-	release(&(alloc->lock));
+	release_spinlock(&(alloc->lock));
 	// leave critical section
 }
 
@@ -314,7 +314,7 @@ void kmview(void)
 	// display all the content in kmem_table
 
 	// enter critical section
-	acquire(&kmem_table_lock);
+	acquire_spinlock(&kmem_table_lock);
 
 	for (int i = 0; i < KMEM_TABLE_SIZE; i ++) {
 		struct kmem_allocator *alloc = kmem_table[i];
@@ -325,7 +325,7 @@ void kmview(void)
 		}
 	}
 
-	release(&kmem_table_lock);
+	release_spinlock(&kmem_table_lock);
 	// leave critical section
 }
 
@@ -339,7 +339,7 @@ void kmview(void)
 
 void kmtest(void)
 {
-	__debug_info("kmemtest", "check point 1, hart %d\n", r_tp());
+	LOG_INFO("kmemtest", "check point 1, hart %d\n", r_tp());
 	kmview();
 
 	struct proc *p0 = kmalloc(sizeof(struct proc));
@@ -362,10 +362,10 @@ void kmtest(void)
 	struct file *f2 = kmalloc(sizeof(struct file));
 	struct file *f3 = kmalloc(sizeof(struct file));
 
-	__debug_info("kmemtest", "check point 2, hart %d\n", r_tp());
+	LOG_INFO("kmemtest", "check point 2, hart %d\n", r_tp());
 	kmview();
 
-	struct proc **pn = (struct proc **) allocpage();
+	struct proc **pn = (struct proc **) pm_alloc();
 	int num = PGSIZE / sizeof(struct proc *);
 	for (int i = 0; i < num; i++) {
 		pn[i] = (struct proc *) kmalloc(sizeof(struct proc));
@@ -374,7 +374,7 @@ void kmtest(void)
 		pn[i]->tmask = i;       // last field
 	}
 
-	__debug_info("kmemtest", "check point 3, hart %d\n", r_tp());
+	LOG_INFO("kmemtest", "check point 3, hart %d\n", r_tp());
 	kmview();
 
 	for (int i = 0; i < num; i++) {
@@ -386,9 +386,9 @@ void kmtest(void)
 		}
 		kfree(pn[i]);
 	}
-	freepage(pn);
+	pm_free(pn);
 
-	__debug_info("kmemtest", "check point 4, hart %d\n", r_tp());
+	LOG_INFO("kmemtest", "check point 4, hart %d\n", r_tp());
 	kmview();
 
 	kfree(p0);
@@ -411,7 +411,7 @@ void kmtest(void)
 	kfree(f2);
 	kfree(f3);
 
-	__debug_info("kmemtest", "check point 5, hart %d\n", r_tp());
+	LOG_INFO("kmemtest", "check point 5, hart %d\n", r_tp());
 	kmview();
 
 	// Boarder cases
@@ -420,17 +420,17 @@ void kmtest(void)
 	void *mem_max_around_border = kmalloc(4040);
 	void *mem_min_around_border = kmalloc(30);
 
-	__debug_info("kmemtest", "check point 5, hart %d\n", r_tp());
+	LOG_INFO("kmemtest", "check point 5, hart %d\n", r_tp());
 	kmview();
 
 	kfree(mem_min);
 	if (NULL != mem_max) {
-		__debug_error("kmemtest", "mem_max wrong alloc\n");
+		LOG_DEBUG("kmemtest", "mem_max wrong alloc\n");
 	}
 	kfree(mem_min_around_border);
 	kfree(mem_max_around_border);
 
-	__debug_info("kmemtest", "check point 6, hart %d\n", r_tp());
+	LOG_INFO("kmemtest", "check point 6, hart %d\n", r_tp());
 	kmview();
 }
 

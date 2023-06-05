@@ -17,4 +17,6 @@ int   strncmp(const char* p, const char* q, uint32_t n);
 
 char* strncpy(char* s, const char* t, int n);
 
+char *strchr(const char *s, char c);
+
 #endif

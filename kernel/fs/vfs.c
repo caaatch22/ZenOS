@@ -3,6 +3,7 @@
 #include "proc/proc.h"
 #include "arch/cpu.h"
 #include "mm/kmalloc.h"
+#include "utils/string.h"
 // Virtual File System (only supports FAT32 so far).
 
 extern struct super_block rootfs;
@@ -38,7 +39,7 @@ struct inode *create(char *path, uint32_t type, struct inode *dp)
 			case S_IFREG: type = 2; break;
 			case S_IFBLK: type = 3; break;
 			default:
-				panic("in fs.c: create: unrecognizeed type from user space");
+				PANIC("in fs.c: create: unrecognizeed type from user space");
 				break;
 			}
 	}
@@ -46,10 +47,10 @@ struct inode *create(char *path, uint32_t type, struct inode *dp)
 	if((dp = nameiparentfrom(dp, path, name)) == NULL) {
 		// root doesn't have parent
 		if(strncmp(path, "/", MAX_NAME_SIZE) != 0){
-			printf("in fs.c: create: wrong path :%s\n", path);
+			print("in fs.c: create: wrong path :%s\n", path);
 			return NULL;
 		}
-		__debug_error("fs.c:create","dp is root\n");
+		LOG_ERROR("dp is root\n");
 		dp = namei("/");
 		ilock(dp);
 		return dp;
@@ -62,9 +63,9 @@ struct inode *create(char *path, uint32_t type, struct inode *dp)
 	}
 
 	struct super_block *sb = dp->sb;
-	acquire(&sb->cache_lock);
+	acquire_spinlock(&sb->cache_lock);
 	de = de_check_cache(dp->entry, name);
-	release(&sb->cache_lock);
+	release_spinlock(&sb->cache_lock);
 
 	if (de != NULL) {
 		iunlockput(dp);
@@ -99,11 +100,11 @@ struct inode *create(char *path, uint32_t type, struct inode *dp)
 	de->inode = ip;
 	de->op = &rootfs_dentry_op;
 
-	acquire(&sb->cache_lock);
+	acquire_spinlock(&sb->cache_lock);
 	de->parent = dp->entry;
 	de->next = dp->entry->child;
 	dp->entry->child = de;
-	release(&sb->cache_lock);
+	release_spinlock(&sb->cache_lock);
 
 	if (type != ip->mode) {
 		iunlockput(dp);
@@ -124,32 +125,32 @@ int unlink(struct inode *ip)
 	struct super_block *sb = ip->sb;
 	struct dentry *de = ip->entry;
 
-	__debug_info("unlink", "unlink %s\n", de->name);
+	LOG_INFO("unlink %s\n", de->name);
 	for (sb = &rootfs; sb != NULL; sb = sb->next) {
 		if (sb->dev == ip) {
-			__debug_warn("unlink", "%s is busy\n", de->name);
+			LOG_WARN("%s is busy\n", de->name);
 			return -1;
 		}
 	}
 
 	sb = ip->sb;
 	if (de == sb->root) {
-		__debug_warn("unlink", "try to unlink root\n");
+		LOG_WARN("try to unlink root\n");
 		return -1;
 	}
 	if (ip->op->unlink(ip) < 0) {
-		__debug_warn("unlink", "fail\n");
+		LOG_WARN("fail\n");
 		return -1;
 	}
 
-	acquire(&sb->cache_lock);
+	acquire_spinlock(&sb->cache_lock);
 	if (ip->nlink == 0) {
 		// No other files link to ip
 		ip->state |= I_STATE_FREE;
 		// Remove the dentry from cache, but do not free it.
 		de_delete(de);
 	}
-	release(&sb->cache_lock);
+	release_spinlock(&sb->cache_lock);
 
 	return 0;
 }
@@ -157,10 +158,10 @@ int unlink(struct inode *ip)
 
 struct inode *idup(struct inode *ip)
 {
-	acquire(&ip->sb->cache_lock);
+	acquire_spinlock(&ip->sb->cache_lock);
 	ip->sb->ref++;
 	ip->ref++;
-	release(&ip->sb->cache_lock);
+	release_spinlock(&ip->sb->cache_lock);
 	return ip;
 }
 
@@ -169,13 +170,13 @@ void iput(struct inode *ip)
 {
 	// Lock the cache so that no one can get ip.
 	struct super_block *sb = ip->sb;
-	acquire(&sb->cache_lock);
+	acquire_spinlock(&sb->cache_lock);
 	sb->ref--;
 	if (ip->ref == 1) {
 		// ref == 1 means no other process can have ip locked,
 		// so this acquiresleep() won't block (or deadlock).
-		acquiresleep(&ip->lock);
-		release(&sb->cache_lock);
+		acquire_sleeplock(&ip->lock);
+		release_spinlock(&sb->cache_lock);
 
 		// This file is removed, so its dentry should have been
 		// deleted from the dentry tree.
@@ -189,30 +190,30 @@ void iput(struct inode *ip)
 		else if (ip->state & I_STATE_DIRTY) {
 			ip->op->update(ip);
 		}
-		releasesleep(&ip->lock);
-		acquire(&sb->cache_lock);
+		release_sleeplock(&ip->lock);
+		acquire_spinlock(&sb->cache_lock);
 	}
 	ip->ref--;
-	release(&sb->cache_lock);
+	release_spinlock(&sb->cache_lock);
 }
 
 
 void ilock(struct inode *ip)
 {
 	if (ip == 0 || ip->ref < 1){
-		printf("lock ref:%d\n", ip->ref);
-		panic("ilock");
+		print("lock ref:%d\n", ip->ref);
+		PANIC("ilock");
 	}
 
-	acquiresleep(&ip->lock);
+	acquire_sleeplock(&ip->lock);
 }
 
 
 void iunlock(struct inode *ip)
 {
 	if (ip == 0 || !holdingsleep(&ip->lock) || ip->ref < 1)
-		panic("iunlock");
-	releasesleep(&ip->lock);
+		PANIC("iunlock");
+	release_sleeplock(&ip->lock);
 }
 
 
@@ -261,7 +262,7 @@ static struct dentry *de_check_cache(struct dentry *parent, char *name)
 int de_delete(struct dentry *de)
 {
 	if (de->child != NULL)
-		panic("de_delete: has children");
+		PANIC("de_delete: has children");
 
 	struct dentry **pde;
 	for (pde = &de->parent->child; *pde != NULL; pde = &(*pde)->next) {
@@ -271,7 +272,7 @@ int de_delete(struct dentry *de)
 		}
 	}
 
-	panic("de_delete: not in cache delete");
+	PANIC("de_delete: not in cache delete");
 	return -1;
 }
 
@@ -282,25 +283,25 @@ static void do_de_print(struct dentry *de, int level)
 	struct dentry *child;
 	for (child = de->child; child != NULL; child = child->next) {
 		for (int i = 0; i < level; i++) {
-			printf("\t");
+			print("\t");
 		}
 		LOG_INFO("%d %s\n", child->inode->ref, child->name);
 		do_de_print(child, level + 1);
 		if (child->mount) {
-			release(&child->inode->sb->cache_lock);
+			release_spinlock(&child->inode->sb->cache_lock);
 			de_print(child->mount, level);
-			acquire(&child->inode->sb->cache_lock);
+			acquire_spinlock(&child->inode->sb->cache_lock);
 		}
 	}
 }
 
 void de_print(struct super_block *sb, int level)
 {
-	acquire(&sb->cache_lock);
+	acquire_spinlock(&sb->cache_lock);
 
 	struct dentry *root = sb->root;
 	for (int i = 0; i < level; i++) {
-		printf("\t");
+		print("\t");
 	}
 	if (sb->dev) {
 		LOG_INFO("%d/%d %s mounted at %s\n",
@@ -310,7 +311,7 @@ void de_print(struct super_block *sb, int level)
 	}
 	do_de_print(root, level + 1);
 
-	release(&sb->cache_lock);
+	release_spinlock(&sb->cache_lock);
 }
 
 
@@ -338,7 +339,7 @@ void rootfs_print()
 struct inode *dirlookup(struct inode *dir, char *filename, uint32_t *poff)
 {
 	if (dir->mode != T_DIR)
-		panic("dirlookup");
+		PANIC("dirlookup");
 
 	struct super_block *sb = dir->sb;
 	struct dentry *de, *parent;
@@ -361,11 +362,11 @@ struct inode *dirlookup(struct inode *dir, char *filename, uint32_t *poff)
 	}
 
 	// Look through in memory
-	acquire(&sb->cache_lock);
+	acquire_spinlock(&sb->cache_lock);
 	de = de_check_cache(dir->entry, filename);
-	release(&sb->cache_lock);
+	release_spinlock(&sb->cache_lock);
 	if (de != NULL) {
-		__debug_info("dirlookup", "cache hit: %s\n", filename);
+		LOG_INFO("cache hit: %s\n", filename);
 		return idup(de->inode);
 	}
 
@@ -375,7 +376,7 @@ struct inode *dirlookup(struct inode *dir, char *filename, uint32_t *poff)
 		if (ip) {
 			sb->op.destroy_inode(ip);
 		}
-		__debug_warn("dirlookup", "file not found: %s\n", filename);
+		LOG_WARN("file not found: %s\n", filename);
 		return NULL;
 	}
 
@@ -389,12 +390,12 @@ struct inode *dirlookup(struct inode *dir, char *filename, uint32_t *poff)
 	de->inode = ip;
 	de->op = &rootfs_dentry_op;
 
-	acquire(&sb->cache_lock);
+	acquire_spinlock(&sb->cache_lock);
 	parent = dir->entry;
 	de->parent = parent;
 	de->next = parent->child;
 	parent->child = de;
-	release(&sb->cache_lock);
+	release_spinlock(&sb->cache_lock);
 
 	return ip;
 }
@@ -441,7 +442,7 @@ static char *skipelem(char *path, char *name, int max)	//get a partition in path
 static struct inode *lookup_path(char *path, int parent, char *name, struct inode *ip_spec)
 {
 	struct inode *ip, *next;  // 'ip' is the inode we are looking for
-	struct proc *p = myproc();
+	struct proc *p = curr_proc();
 	if (*path == '/') {  // 绝对路径
 		if(strncmp("/proc/self/exe", path, 15) == 0){  // 我们没有这个伪文件系统，通过另一种方式实现。
 			if( p->elf )
@@ -470,10 +471,10 @@ static struct inode *lookup_path(char *path, int parent, char *name, struct inod
 		}
 		if ((next = dirlookup(ip, name, 0)) == NULL) {
 			iunlockput(ip);
-			__debug_warn("lookup_path", "dirlookup returns a NULL\n");
+			LOG_WARN("dirlookup returns a NULL\n");
 			return NULL;
 		}
-		__debug_info("lookup_path", "found: %s\n", next->entry->name);
+		LOG_INFO("found: %s\n", next->entry->name);
 		iunlockput(ip);
 		ip = next;
 	}
@@ -481,14 +482,14 @@ static struct inode *lookup_path(char *path, int parent, char *name, struct inod
 		iput(ip);
 		return NULL;
 	}
-	__debug_info("lookup_path", "finally: %s\n", ip->entry->name);
+	LOG_INFO("finally: %s\n", ip->entry->name);
 	return ip;
 }
 
 
 //-------------------------------------
 // the function of name~ won't hold the lock.
-// once search done, they release the lock.
+// once search done, they release_spinlock the lock.
 struct inode *namei(char *path)
 {
 	char name[MAX_NAME_SIZE + 1];
@@ -524,7 +525,7 @@ struct inode *nameiparentfrom(struct inode *dp, char *path, char *name)
 int namepath(struct inode *ip, char *path, uint32_t max)
 {
 	// if (max < 2)
-	// 	panic("namepath: what do you want from me by a max less than 2");
+	// 	PANIC("namepath: what do you want from me by a max less than 2");
 
 	struct super_block *sb = ip->sb;
 	struct dentry *de = ip->entry;  // 当前inode的dentry
@@ -539,28 +540,28 @@ int namepath(struct inode *ip, char *path, uint32_t max)
 	char *p = path + max - 1;
 	*p = '\0';
 
-	acquire(&sb->cache_lock);
+	acquire_spinlock(&sb->cache_lock);
 	for (;;) {
 		while (de == sb->root) { // It indicates that de is a root and may be a mount point.
 			if ((de = de->parent) == NULL) { // Meet root of rootfs.
 				break;
 			}
-			release(&sb->cache_lock);
+			release_spinlock(&sb->cache_lock);
 			sb = de->inode->sb;
-			acquire(&sb->cache_lock);
+			acquire_spinlock(&sb->cache_lock);
 		}
 		if (de == NULL)
 			break;
 		len = strlen(de->name);
 		if ((p -= len) <= path) {
-			release(&sb->cache_lock);
+			release_spinlock(&sb->cache_lock);
 			return -1;
 		}
 		memmove(p, de->name, len);
 		*--p = '/';
 		de = de->parent;
 	}
-	release(&sb->cache_lock);
+	release_spinlock(&sb->cache_lock);
 
 	len = max - (p - path);		// '\0' has been included
 	memmove(path, p, len);		// memmove will handle overlap
@@ -581,9 +582,9 @@ extern void image_fs_uninstall(struct super_block *sb);
 uint32_t get_number_dev(struct unique_number *un)
 {
 	uint32_t un_now;
-	acquire(&un->lock);
+	acquire_spinlock(&un->lock);
 	un_now = un->number++;
-	release(&un->lock);
+	release_spinlock(&un->lock);
 	return un_now;
 }
 struct unique_number dev_num = { // to assign unique devnum
@@ -608,7 +609,7 @@ int do_mount(struct inode *dev, struct inode *mntpoint, char *type, uint32_t fla
 		case S_IFREG: dev->mode = T_FILE; break;
 		case S_IFBLK: dev->mode = T_DEVICE; break;
 		default:
-			panic("int fs.c:do_mount:unrecogenized type!!");
+			PANIC("int fs.c:do_mount:unrecogenized type!!");
 			break;
 		}
 	}
@@ -617,7 +618,7 @@ int do_mount(struct inode *dev, struct inode *mntpoint, char *type, uint32_t fla
 	if (strncmp("vfat", type, 5) != 0 &&
 		strncmp("fat32", type, 6) != 0)
 	{
-		printf("in fs.c:unsupport fs\n");
+		print("in fs.c:unsupport fs\n");
 		return -1;
 	}
 
@@ -630,7 +631,7 @@ int do_mount(struct inode *dev, struct inode *mntpoint, char *type, uint32_t fla
 	// __debug_info("do_mount", "dev:%s mntpnt:%s\n", dev->entry->filename, mntpoint->entry->filename);
 
 	if (dev->mode == T_DIR || mntpoint->mode != T_DIR) {
-		__debug_warn("do_mount", "Error file type: dev:%d mntpoint:%d\n",
+		LOG_WARN("Error file type: dev:%d mntpoint:%d\n",
 			dev->mode, mntpoint->mode);
 		return -1;
 	}
@@ -643,7 +644,7 @@ int do_mount(struct inode *dev, struct inode *mntpoint, char *type, uint32_t fla
 		return -1;
 
 	// put this dev into dentry_tree
-	acquire(&rootfs.cache_lock); // borrow this lock
+	acquire_spinlock(&rootfs.cache_lock); // borrow this lock
 
 	struct super_block *tsr = &rootfs;  // tsr: temp_sb_rootfs
 	while (tsr->next != NULL)
@@ -654,7 +655,7 @@ int do_mount(struct inode *dev, struct inode *mntpoint, char *type, uint32_t fla
 	safestrcpy(dev_sb->root->name, dmnt->name, sizeof(dmnt->name));
 	dmnt->mount = dev_sb;
 
-	release(&rootfs.cache_lock);
+	release_spinlock(&rootfs.cache_lock);
 
 	idup(mntpoint);
 
@@ -668,13 +669,13 @@ int do_mount(struct inode *dev, struct inode *mntpoint, char *type, uint32_t fla
 int do_umount(struct inode *mntpoint, uint32_t flag)
 {
 	if (mntpoint->mode != T_DIR) {
-		__debug_warn("do_umount", "try to umount file: %s\n", mntpoint->entry->name);
+		LOG_WARN("try to umount file: %s\n", mntpoint->entry->name);
 		return -1;
 	}
 
 	struct super_block *sb = mntpoint->sb;
 	if (mntpoint->entry != sb->root || sb == &rootfs) {
-		__debug_warn("do_umount", "%s is not a mount point\n", mntpoint->entry->name);
+		LOG_WARN("%s is not a mount point\n", mntpoint->entry->name);
 		return -1;
 	}
 
@@ -689,28 +690,28 @@ int do_umount(struct inode *mntpoint, uint32_t flag)
 	} while (de == sb_prnt->root);
 
 	// Lock parent to block cache check.
-	acquire(&sb_prnt->cache_lock);
+	acquire_spinlock(&sb_prnt->cache_lock);
 	// Check whether only we hold this ref.
 	if (sb->ref > 1) {
-		__debug_warn("do_umount", "mount point is busy\n");
-		release(&sb_prnt->cache_lock);
+		LOG_WARN("mount point is busy\n");
+		release_spinlock(&sb_prnt->cache_lock);
 		return -1;
 	}
 	// Unmount from dentry tree.
 	de = mntpoint->entry;
 	de->parent->mount = NULL;
-	release(&sb_prnt->cache_lock);
+	release_spinlock(&sb_prnt->cache_lock);
 
 	// Put the inode it mounts at.
 	iput(de->parent->inode);
 
 	// Remove from super_block list.
-	acquire(&rootfs.cache_lock);
+	acquire_spinlock(&rootfs.cache_lock);
 	sb_prnt = &rootfs;
 	while (sb_prnt->next != sb)
 		sb_prnt = sb_prnt->next;
 	sb_prnt->next = sb->next;
-	release(&rootfs.cache_lock);
+	release_spinlock(&rootfs.cache_lock);
 
 	image_fs_uninstall(sb);
 

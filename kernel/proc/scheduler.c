@@ -13,7 +13,7 @@ void scheduler(void)
     struct proc *next_proc = NULL;
     int any_proc = FALSE;
     // lock when picking proc
-    acqure_spinlock(&pool_lock);
+    acquire_spinlock(&pool_lock);
 
     for (struct proc *p = pool; p < &pool[NPROC]; p++) {
       if (!p->state == UNUSED) {
@@ -29,7 +29,7 @@ void scheduler(void)
 
     if (next_proc != NULL) {
       // found a process to run, lock down the proc;
-      acqure_spinlock(&next_proc->lock);
+      acquire_spinlock(&next_proc->lock);
     }
     // picking proc done
     release_spinlock(&pool_lock);

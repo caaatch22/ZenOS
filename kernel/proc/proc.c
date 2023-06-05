@@ -7,6 +7,9 @@
 #include "trap/trap.h"
 #include "mm/vm.h"
 #include "mm/pmallocator.h"
+#include "common/common.h"
+
+extern void swtch(struct context *, struct context *);
 
 struct proc pool[NPROC];
 
@@ -52,7 +55,7 @@ void procinit(void) {
 
 
 int allocpid() {
-  acqure_spinlock(&next_pid.lock);
+  acquire_spinlock(&next_pid.lock);
   int pid = next_pid.pid;
   next_pid.pid++;
   release_spinlock(&next_pid.lock);
@@ -84,10 +87,10 @@ pagetable_t proc_pagetable(struct proc *p) {
 struct proc *allocproc(void)
 {
   struct proc *p;
-  acqure_spinlock(&pool_lock);
+  acquire_spinlock(&pool_lock);
   for (p = pool; p < &pool[NPROC]; p++) {
     if (p->state == UNUSED) {
-      acqure_spinlock(&p->lock);
+      acquire_spinlock(&p->lock);
       release_spinlock(&pool_lock);
       goto found;
     }
@@ -117,4 +120,80 @@ found:
   p->stride = 0;
   p->priority = 16;
   return p;
+}
+
+// Atomically release lock and sleep on chan.
+// Reacquires lock when awakened.
+void sleep(void *waiting_target, struct spinlock *lk) {
+
+  struct proc *p = curr_proc();
+
+  // tracecore("sleep");
+  // Must acquire p->lock in order to
+  // change p->state and then call switch_to_scheduler.
+  // Once we hold p->lock, we can be
+  // guaranteed that we won't miss any wakeup
+  // (wakeup locks p->lock),
+  // so it's okay to release lk.
+  // print_proc(p);
+
+  acquire_spinlock(&p->lock);
+
+  release_spinlock(lk);
+
+  // Go to sleep.
+  p->waiting_target = waiting_target;
+  p->state = SLEEPING;
+
+  switch_to_scheduler();
+
+  // Tidy up.
+  p->waiting_target = NULL;
+
+  // Reacquire original lock.
+
+  release_spinlock(&p->lock);
+
+  acquire_spinlock(lk);
+
+}
+
+void wakeup(void *waiting_target) {
+  struct proc *p;
+
+  for (p = pool; p < &pool[NPROC]; p++) {
+    if (p != curr_proc()) {
+      acquire_spinlock(&p->lock);
+      if (p->state == SLEEPING && p->waiting_target == waiting_target) {
+        p->state = RUNNABLE;
+      }
+      release_spinlock(&p->lock);
+    }
+  }
+}
+
+// Switch to scheduler.  Must hold only p->lock
+// and have changed proc->state. Saves and restores
+// intena because intena is a property of this
+// kernel thread, not this CPU. It should
+// be proc->intena and proc->noff, but that would
+// break in the few places where a lock is held but
+// there's no process.
+void switch_to_scheduler(void) {
+  uint64_t prev_intr_status;
+  uint64_t old_ra = r_ra();
+
+  struct proc *p = curr_proc();
+  ASSERT(p->state != RUNNING, "current proc shouldn't be running");
+  // ASSERT(holding(&p->lock), "should hold currernt proc's lock"); // holding currernt proc's lock
+  ASSERT(mycpu()->intr_disable_depth == 1, "");                  // and it's the only lock
+  // ASSERT(!intr_get(), "interrput should be off");                // interrput is off
+
+  prev_intr_status = mycpu()->prev_intr_status;
+  // LOG_DEBUG("in switch_to_scheduler before swtch prev_intr_status=%d", prev_intr_status);
+  uint64_t old_sp = r_sp();
+  swtch(&p->context, &mycpu()->prev_context); // will goto scheduler()
+  uint64_t new_sp = r_sp();
+  // LOG_DEBUG("in switch_to_scheduler after swtch");
+  mycpu()->prev_intr_status = prev_intr_status;
 }

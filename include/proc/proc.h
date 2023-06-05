@@ -73,6 +73,8 @@ extern struct spinlock wait_lock;
 void sleep(void *waiting_target, struct spinlock *lk);
 void wakeup(void *waiting_target);
 
+void switch_to_scheduler(void);
+
 void print_proc(struct proc *proc);
 void forkret(void);
 

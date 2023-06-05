@@ -4,6 +4,10 @@
 #include "common/defs.h"
 #include "fs/vfs.h"
 
+#ifndef MAX_NAME_SIZE 
+#define MAX_NAME_SIZE 255
+#endif
+
 // xv6自用stat->mode
 #define T_DIR     1   // Directory
 #define T_FILE    2   // File

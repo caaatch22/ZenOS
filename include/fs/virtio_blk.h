@@ -5,12 +5,12 @@
 #include "lock/spinlock.h"
 #include "fs/buffer.h"
 
-#ifndef VIRTIO_QUEUE_SIZE
-#define VIRTIO_QUEUE_SIZE (BUFFER_MAX_NUM & ~1l)
-#define VIRTIO_DESC_RING_SIZE (16 * VIRTIO_QUENE_SIZE)
-#define VIRTIO_AVAIL_RING_SIZE (6 + 2 * VIRTIO_QUENE_SIZE)
-#define VIRTIO_USED_RING_SIZE (6 + 8 * VIRTIO_QUENE_SIZE)
-#endif
+// #ifndef VIRTIO_QUEUE_SIZE
+// #define VIRTIO_QUEUE_SIZE (BUFFER_MAX_NUM & ~1l)
+// #define VIRTIO_DESC_RING_SIZE (16 * VIRTIO_QUENE_SIZE)
+// #define VIRTIO_AVAIL_RING_SIZE (6 + 2 * VIRTIO_QUENE_SIZE)
+// #define VIRTIO_USED_RING_SIZE (6 + 8 * VIRTIO_QUENE_SIZE)
+// #endif
 
 #define VIRTIO_DEV_ID_BLK 2
 
