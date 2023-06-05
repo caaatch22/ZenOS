@@ -51,11 +51,12 @@ struct proc {
   uint64_t priority;
 //   uint64_t cpu_time;          // ms, user and kernel
 //   uint64_t last_start_time;   // ms
-//   struct file *files[FD_MAX]; // Opened files
-//   struct inode *cwd;          // Current directory
-//   struct shared_mem *shmem[MAX_PROC_SHARED_MEM_INSTANCE];
-//   void *shmem_map_start[MAX_PROC_SHARED_MEM_INSTANCE];
-//   void *next_shmem_addr;
+  struct file *files[FD_MAX]; // Opened files
+  struct inode *cwd;          // Current directory
+  struct inode *elf;          //self-file
+  //   struct shared_mem *shmem[MAX_PROC_SHARED_MEM_INSTANCE];
+  //   void *shmem_map_start[MAX_PROC_SHARED_MEM_INSTANCE];
+  //   void *next_shmem_addr;
   char name[PROC_NAME_MAX]; // Process name (debugging)
 };
 
