@@ -2,10 +2,8 @@ K = kernel
 I = include
 L = lib
 
-KSRCS = $(K)/*.c
-KSRCS += $(K)/*.S
-
-LSRCS = $(L)/*.c
+KSRCS = $(K)/*.c $(K)/*/*.c
+KSRCS += $(K)/*.S $(K)/*/*.S
 
 TOOLPREFIX = riscv64-unknown-elf-
 CC = $(TOOLPREFIX)gcc
