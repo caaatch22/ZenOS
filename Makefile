@@ -10,7 +10,7 @@ LD = $(TOOLPREFIX)ld
 OBJCOPY = $(TOOLPREFIX)objcopy
 OBJDUMP = $(TOOLPREFIX)objdump
 GDB = $(TOOLPREFIX)gdb
-
+CP = cp
 PY = python3
 
 OBJDIR = build
@@ -26,6 +26,10 @@ HEADER_DEP = $(addsuffix .d, $(basename $(C_OBJS)))
 
 ifeq (,$(findstring link_app.o,$(OBJS)))
 	AS_OBJS += $(OBJDIR)/$K/link_app.o
+endif
+
+ifndef CPUS
+CPUS := 4
 endif
 
 CFLAGS = \
@@ -90,13 +94,19 @@ build_os: $(OBJS)
 all: $(OBJDIR)
 	$(CC) $(CFLAGS) $(C_SRCS) $(AS_SRCS) -o ./$(OBJDIR)/kernel
 
-qemu: build_kernel
-	qemu-system-riscv64 \
-		-machine virt \
-		-nographic \
-		-bios default \
-		-m 128M \
-		-kernel ./build/os
+QEMU = qemu-system-riscv64
+QEMUOPTS = \
+	-nographic \
+	-smp $(CPUS) \
+	-machine virt \
+	-bios default \
+	-kernel build/os \
+	-drive file=$(U)/fs-copy.img,if=none,format=raw,id=x0 \
+    -device virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0
+
+run: build_kernel
+	$(CP) $(U)/fs.img $(U)/fs-copy.img
+	$(QEMU) $(QEMUOPTS)
 
 $(OBJDIR):
 	@mkdir -p $(OBJDIR)
@@ -104,3 +114,5 @@ $(OBJDIR):
 clean:
 	rm -rf $(OBJDIR) nfs/fs kernel/kernel_app.ld kernel/link_app.S
 
+user:
+	make -C user
