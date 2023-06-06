@@ -28,6 +28,8 @@ int sys_sched_yield(void);
 
 pid_t sys_waitpid(pid_t pid, int *wstatus_va);
 
+pid_t sys_wait4(pid_t pid, int *status, int options);
+
 int sys_mkdir(char *pathname_va);
 
 int sys_close(int fd);

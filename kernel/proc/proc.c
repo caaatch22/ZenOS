@@ -8,6 +8,7 @@
 #include "mm/vm.h"
 #include "mm/pmallocator.h"
 #include "common/common.h"
+#include "fs/rootfs.h"
 
 extern void swtch(struct context *, struct context *);
 
@@ -132,20 +133,30 @@ found:
   p->total_size = 0;
   p->heap_sz = 0;
   p->exit_code = -1;
-  p->parent = 0;
+  p->killed = FALSE;
+  p->waiting_target = NULL;
+  p->parent = NULL;
   p->ustack = 0;
   p->pagetable = proc_pagetable(p);
   if (p->pagetable == 0) {
     PANIC("");
   }
   memset(&p->context, 0, sizeof(p->context));
+  p->kstack = (uint64_t)kstack[p - pool];
   memset((void *)p->kstack, 0, KSTACK_SIZE);
   // LOG_DEBUG("memset done");
-  p->context.ra = (uint64_t)usertrapret; // used in swtch()
+  p->context.ra = (uint64_t)forkret; // used in swtch()
   p->context.sp = p->kstack + KSTACK_SIZE;
 
   p->stride = 0;
   p->priority = 16;
+  for (int i = 0; i < FD_MAX; i++) {
+    p->ofiles[i] = NULL;
+  }
+  p->user_time = 0;
+  p->kernel_time = 0;
+  p->cwd = NULL;
+  p->name[0] = '\0';
   return p;
 }
 
@@ -313,4 +324,34 @@ int get_cpu_time(struct proc *p, struct tms *tms) {
   }
   release_spinlock(&pool_lock);
   return 0;
+}
+
+
+// A fork child's very first scheduling by scheduler()
+// will swtch to forkret.
+void
+forkret(void)
+{
+  // printf("run in forkret\n");
+  static int first = 1;
+
+  // Still holding p->lock from scheduler.
+  release_spinlock(&curr_proc()->lock);
+
+  // clean float-system
+	// w_sstatus_fs(SSTATUS_FS_CLEAN);
+  struct proc *p = curr_proc();
+
+  if (first) {
+    // File system initialization must be run in the context of a
+    // regular process (e.g., because it calls sleep), and thus cannot
+    // be run from main().
+    // printf("[forkret]first scheduling\n");
+    first = 0;
+    rootfs_init();
+    p->cwd = namei("/");
+  }
+
+  // p->iktmp = readtime();
+  usertrapret();
 }

@@ -12,6 +12,11 @@
 #define FD_MAX (16)
 #define PROC_NAME_MAX (16)
 
+// for wait()
+#define WNOHANG     0x00000001
+#define WUNTRACED	  0x00000002
+#define WCONTINUED  0x00000008
+
 extern char trapforward[];
 extern char boot_stack_top[];
 extern char boot_stack[];

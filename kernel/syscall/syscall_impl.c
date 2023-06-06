@@ -212,6 +212,16 @@ int sys_chdir(char *path_va) {
 //   return wait(pid, wstatus_va);
 // }
 
+// only WNOHANG is supported, WUNTRACED, WCONTINUED are not supported
+// and rusage is not supported
+pid_t sys_wait4(pid_t pid, int *status, int options) {
+  if (options & ~WNOHANG) {
+    LOG_ERROR("sys_wait4: options=%d not support", options);
+    return -1;
+  }
+  return wait(pid, status, options);
+}
+
 uint64_t sys_times(struct tms *tms_va) {
   // print("core %d %d  time=%p\n",cpuid(), intr_get(),(r_sie() & SIE_STIE));
 

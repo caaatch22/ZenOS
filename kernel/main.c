@@ -45,6 +45,10 @@ void main(uint64_t mhartid, uint64_t dtb_address)
   else {
     //other cores
   }
+
+  LOG_INFO("Start scheduling!");
+  scheduler();
+
 }
 
 // TODO: add this to proc
