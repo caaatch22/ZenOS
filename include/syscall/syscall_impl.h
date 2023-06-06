@@ -4,7 +4,7 @@
 #include "common/defs.h"
 #include "fs/fstat.h"
 
-char *sys_getcwd(char *buf, size_t size);
+char *sys_getcwd(char *ubuf, size_t size);
 
 int sys_fstat(int fd, struct kstat *statbuf_va);
 
