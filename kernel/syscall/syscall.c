@@ -118,9 +118,12 @@ void syscall()
   case SYS_read:
     ret = sys_read(args[0], (void *)args[1], args[2]);
     break;
-  // case SYS_open:
-  //   ret = sys_open((char *)args[0], args[1]);
-  //   break;
+  case SYS_open:
+    ret = sys_open((char *)args[0], args[1]);
+    break;
+  case SYS_openat:
+    ret = sys_openat(args[0], (char *)args[1], args[2], args[3]);
+    break;
   case SYS_close:
     ret = sys_close(args[0]);
     break;
@@ -144,6 +147,9 @@ void syscall()
     break;
   case SYS_dup:
     ret = sys_dup((int)args[0]);
+    break;
+  case SYS_dup3:
+    ret = sys_dup3((int)args[0], (int)args[1], (int)args[2]);
     break;
 //   case SYS_fork:
 //     ret = sys_fork();
@@ -169,15 +175,15 @@ void syscall()
   case SYS_chdir:
     ret = sys_chdir((char *)args[0]);
     break;
-//   case SYS_mkdir:
-//     ret = sys_mkdir((char *)args[0]);
-//     break;
-//   case SYS_link:
-//     ret = sys_link((char *)args[0], (char *)args[1]);
-//     break;
-//   case SYS_unlink:
-//     ret = sys_unlink((char *)args[0]);
-//     break;
+  case SYS_mkdirat:
+    ret = sys_mkdirat(args[0], (char *)args[1], args[2]);
+    break;
+  case SYS_linkat:
+    ret = sys_linkat(args[0], (char *)args[1], args[2], (char *)args[3], args[4]);
+    break;
+  case SYS_unlinkat:
+    ret = sys_unlinkat(args[0], (char *)args[1], args[2]);
+    break;
 //   case SYS_sharedmem:
 //     ret = (uint64_t)sys_sharedmem((char *)args[0], args[1]);
 //     break;

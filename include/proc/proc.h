@@ -94,6 +94,7 @@ void forkret(void);
 void proc_free_mem_and_pagetable(struct proc* p);
 struct proc *allocproc(void);
 int fdalloc(struct file *f);
+int fdalloc2(struct file *f, int fd);
 // struct file *get_proc_file_by_fd(struct proc *p, int fd);
 pagetable_t proc_pagetable(struct proc *p);
 void freeproc(struct proc *p);
@@ -104,5 +105,8 @@ void exit(int code);
 
 // yield.c
 void yield();
+
+// wait.c
+int wait(int pid, int *status, int options);
 
 #endif // PROC_H

@@ -12,6 +12,7 @@
 #define SYS_umount2 39
 #define SYS_mount 40
 #define SYS_chdir 49
+#define SYS_open 114515 // 评测中没有sys_open，只有sys_openat
 #define SYS_openat 56
 #define SYS_close 57
 #define SYS_pipe2 59
