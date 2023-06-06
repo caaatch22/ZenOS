@@ -4,39 +4,7 @@
 #include "mm/kmalloc.h"
 #include "utils/string.h"
 
-/* On-disk directory entry structure */
-/* Fields that start with "_" are something we don't use */
-typedef struct short_name_entry {
-    char        name[SHORT_NAME_SIZE];
-    uint8_t       attr;
-    uint8_t       _nt_res;
-    uint8_t       _crt_time_tenth;
-    uint16_t      _crt_time;
-    uint16_t      _crt_date;
-    uint16_t      _lst_acce_date;
-    uint16_t      fst_clus_hi;
-    uint16_t      _lst_wrt_time;
-    uint16_t      _lst_wrt_date;
-    uint16_t      fst_clus_lo;
-    uint32_t      file_size;
-} __attribute__((packed, aligned(4))) short_name_entry_t;
-
-typedef struct long_name_entry {
-    uint8_t       order;
-    wchar       name1[5];
-    uint8_t       attr;
-    uint8_t       _type;
-    uint8_t       checksum;
-    wchar       name2[6];
-    uint16_t      _fst_clus_lo;
-    wchar       name3[2];
-} __attribute__((packed, aligned(4))) long_name_entry_t;
-
-union fat_disk_entry {
-    short_name_entry_t  sne;
-    long_name_entry_t   lne;
-};
-
+uint32_t rw_clus(struct super_block *sb, uint32_t cluster, int write, int user, uint64_t data, uint32_t off, uint32_t n);
 // FAT32 inode operation collection
 struct inode_op fat32_inode_op = {
     .create = fat_alloc_entry,
@@ -53,6 +21,8 @@ struct file_op fat32_file_op = {
     .write = fat_write_file,
     .readdir = fat_read_dir,
 };
+
+extern struct fs_op fat_fs_op;
 
 struct fat32_sb *fat32_init(char *boot_sector)
 {
@@ -88,6 +58,16 @@ struct fat32_sb *fat32_init(char *boot_sector)
     LOG_INFO("fat_sz: %d\n", fat->bpb.fat_sz);
     LOG_INFO("first_data_sec: %d\n", fat->first_data_sec);
 
+    // struct super_block sb;
+    // sb.op = fat_fs_op;
+    // sb.real_sb = fat;
+    // sb.dev_num = 1;
+    // union fat_disk_entry de;
+    // rw_clus(&sb, 3, 0, 0, (uint64_t)&de, 32, sizeof(de));
+    // LOG_DEBUG("%s", de.sne.name);
+
+    // PANIC("test end");
+
     return fat;
 }
 
@@ -110,6 +90,7 @@ struct inode *fat32_root_init(struct super_block *sb)
 
     root->attribute = (ATTR_DIRECTORY | ATTR_SYSTEM);
     root->first_clus = root->cur_clus = fat->bpb.root_clus;
+
     root->clus_cnt = 0;
     root->file_size = 0;
 
@@ -255,9 +236,11 @@ static void free_clus(struct super_block *sb, uint32_t cluster)
 /**
  * Read/Write a cluster, caller must hold relative locks
  */
-static uint32_t rw_clus(struct super_block *sb, uint32_t cluster, int write, int user, uint64_t data, uint32_t off, uint32_t n)
+//static
+uint32_t rw_clus(struct super_block *sb, uint32_t cluster, int write, int user, uint64_t data, uint32_t off, uint32_t n)
 {
     struct fat32_sb *fat = sb2fat(sb);
+
     if (off + n > fat->byts_per_clus)
         PANIC("rw_clus: offset out of range");
 
@@ -265,12 +248,13 @@ static uint32_t rw_clus(struct super_block *sb, uint32_t cluster, int write, int
     uint16_t const bps = fat->bpb.byts_per_sec;
     uint32_t sec = first_sec_of_clus(fat, cluster) + off / bps;
 
-    // LOG_INFO("data:%p\n", data);
+    //LOG_INFO("data:%p\n", data);
     for (tot = 0; tot < n; tot += m, off += m, data += m, sec++) {
         m = bps - off % bps;
         if (n - tot < m) {
             m = n - tot;
         }
+
         if (write) {
             if (sb->op.write(sb, user, (char*)data, sec, off % bps, m) < 0) {
                 break;
@@ -279,7 +263,7 @@ static uint32_t rw_clus(struct super_block *sb, uint32_t cluster, int write, int
             break;
         }
     }
-    // LOG_INFO("clus:%d off:%d len:%d tot:%d\n", cluster, off, n, tot);
+    LOG_INFO("clus:%d off:%d len:%d tot:%d\n", cluster, off, n, tot);
     return tot;
 }
 
@@ -869,11 +853,26 @@ int fat_dir_next(struct inode *dir, struct fat32_dentry *ep, char *namebuf, uint
     memset(namebuf, 0, FAT32_MAX_FILENAME + 1);
     for (int off2; (off2 = reloc_clus(dir, off, 0)) != -1; off += sizeof(de))
     {
+        // LOG_DEBUG("curr_clus:%d", dp->cur_clus);
+        // LOG_DEBUG("off: %d", off2);
+
         if (rw_clus(dir->sb, dp->cur_clus, 0, 0, (uint64_t)&de, off2, sizeof(de)) != sizeof(de)
             || de.lne.order == END_OF_DIR) {
+            // LOG_DEBUG("order:0x%x", (uint32_t)de.lne.order);
+            // LOG_DEBUG("attr:0x%x", de.lne.attr);
+            // LOG_DEBUG("%s", de.sne.name);
+            // LOG_DEBUG("dirent end");
+
             return -1;
         }
+        // LOG_DEBUG("order:0x%x", (uint32_t)de.lne.order);
+        // LOG_DEBUG("attr:0x%x", de.lne.attr);
+        // LOG_DEBUG("%s", de.sne.name);
+        // LOG_DEBUG("dirent end");
+
         if (de.lne.order == EMPTY_ENTRY) {
+            LOG_DEBUG("meet a empty");
+
             if (cnt) {      // We have met a l-n-e, but why we come across an empty one?
                 goto excep; // Maybe the entry is being removed by its so-call inode.
             }
@@ -883,6 +882,7 @@ int fat_dir_next(struct inode *dir, struct fat32_dentry *ep, char *namebuf, uint
             *count = empty;
             return 0;
         }
+
         if (de.lne.attr == ATTR_LONG_NAME) {
             if (de.lne.order & LAST_LONG_ENTRY) {
                 cnt = (de.lne.order & ~LAST_LONG_ENTRY) + 1;   // plus the s-n-e;
@@ -975,6 +975,7 @@ static struct fat32_dentry *fat_lookup_dir_ent(struct inode *dir, char *filename
     char namebuf[FAT32_MAX_FILENAME + 1];
     reloc_clus(dir, 0, 0);
     while ((type = fat_dir_next(dir, ep, namebuf, off, &count) != -1)) {
+
         if (type == 0) {
             if (poff && count >= entcnt) {
                 *poff = off;
@@ -1003,13 +1004,14 @@ static struct fat32_dentry *fat_lookup_dir_ent(struct inode *dir, char *filename
  */
 struct inode *fat_lookup_dir(struct inode *dir, char *filename, uint32_t *poff)
 {
+
     struct super_block *sb = dir->sb;
     struct inode *ip = fat_alloc_inode(sb);
     if (ip == NULL) {
         return NULL;
     }
 
-    uint32_t off = 0;    // Anyhow, we need this on FAT32
+    uint32_t off = 0;
     struct fat32_dentry *ep = fat_lookup_dir_ent(dir, filename, &off);
     if (ep == NULL) {
         kfree(ip);

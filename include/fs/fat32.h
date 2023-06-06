@@ -68,6 +68,39 @@ struct fat32_dentry {  // 目录项，每个32字节（256bit）
     uint32_t clus_cnt;
 };
 
+/* On-disk directory entry structure */
+/* Fields that start with "_" are something we don't use */
+typedef struct short_name_entry {
+    char        name[SHORT_NAME_SIZE];
+    uint8_t       attr;
+    uint8_t       _nt_res;
+    uint8_t       _crt_time_tenth;
+    uint16_t      _crt_time;
+    uint16_t      _crt_date;
+    uint16_t      _lst_acce_date;
+    uint16_t      fst_clus_hi;
+    uint16_t      _lst_wrt_time;
+    uint16_t      _lst_wrt_date;
+    uint16_t      fst_clus_lo;
+    uint32_t      file_size;
+} __attribute__((packed, aligned(4))) short_name_entry_t;
+
+typedef struct long_name_entry {
+    uint8_t       order;
+    wchar       name1[5];
+    uint8_t       attr;
+    uint8_t       _type;
+    uint8_t       checksum;
+    wchar       name2[6];
+    uint16_t      _fst_clus_lo;
+    wchar       name3[2];
+} __attribute__((packed, aligned(4))) long_name_entry_t;
+
+union fat_disk_entry {
+    short_name_entry_t  sne;
+    long_name_entry_t   lne;
+};
+
 
 struct fat32_sb *fat32_init(char *boot_sector);
 struct inode *fat32_root_init(struct super_block *sb);

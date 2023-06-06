@@ -4,6 +4,7 @@
 #include "arch/cpu.h"
 #include "mm/kmalloc.h"
 #include "utils/string.h"
+#include "fs/fat32.h"
 // Virtual File System (only supports FAT32 so far).
 
 extern struct super_block rootfs;
@@ -339,6 +340,8 @@ struct inode *dirlookup(struct inode *dir, char *filename, uint32_t *poff)
 		PANIC("dirlookup");
 
 	struct super_block *sb = dir->sb;
+
+
 	struct dentry *de, *parent;
 	if (strncmp(filename, ".", MAX_NAME_SIZE) == 0) {
 		de = de_mnt_in(dir->entry);
@@ -366,10 +369,10 @@ struct inode *dirlookup(struct inode *dir, char *filename, uint32_t *poff)
 		LOG_INFO("cache hit: %s\n", filename);
 		return idup(de->inode);
 	}
-
 	// Not in memory. Now look through in disk
 	struct inode *ip = dir->op->lookup(dir, filename, poff);
-	if (ip == NULL || (de = kmalloc(sizeof(struct dentry))) == NULL) {
+	if (ip == NULL || (de = kmalloc(sizeof(struct dentry))) == NULL)
+	{
 		if (ip) {
 			sb->op.destroy_inode(ip);
 		}
@@ -448,17 +451,22 @@ static struct inode *lookup_path(char *path, int parent, char *name, struct inod
 				return idup(p->elf);
 			return NULL;
 		}
+
 		ip = de_mnt_in(rootfs.root)->inode;
 		ip = idup(ip);
-	} else if (*path != '\0') {  // 相对路径
+	}
+	else if (*path != '\0') { // 相对路径
 		// 如果有指定的inode，则使用的指定的，否则使用cwd
 		ip = ip_spec ? idup(ip_spec) : idup(p->cwd);
-	} else {
+	}
+	else
+	{
 		//__debug_warn("lookup_path", "path invalid\n");
 		return NULL;
 	}
 
 	while ((path = skipelem(path, name, MAX_NAME_SIZE)) != 0) {
+
 		ilock(ip);
 		if (ip->mode != T_DIR) {
 			iunlockput(ip);
@@ -658,8 +666,6 @@ int do_mount(struct inode *dev, struct inode *mntpoint, char *type, uint32_t fla
 	release_spinlock(&rootfs.cache_lock);
 
 	idup(mntpoint);
-
-	// }
 
 	return 0;
 }

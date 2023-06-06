@@ -41,6 +41,10 @@ void main(uint64_t mhartid, uint64_t dtb_address)
     kmallocinit();
     kernel_vmenable();
 
+    // uint64_t pos = INITRD_START + 512 * 1292 + 32;
+    // LOG_DEBUG("%s", (char *)pos);
+    // PANIC("test");
+
     virtio_blk_init();
     rootfs_init();
 
@@ -51,10 +55,6 @@ void main(uint64_t mhartid, uint64_t dtb_address)
   else {
     //other cores
   }
-
-  LOG_INFO("Start scheduling!");
-  scheduler();
-
 }
 
 // TODO: add this to proc
@@ -66,14 +66,10 @@ int threadid() {
 
 void fs_test()
 {
+  LOG_DEBUG("fs_test begin");
   struct inode *ip;
   struct dentry *dp;
-  ip = namei("/bin");
-  dp = ip->entry->child;
+  ip = namei("/bin/test");
 
-  LOG_DEBUG("root dev_num: %d", ip->dev_num);
-  LOG_DEBUG("name: %s", ip->entry->name);
-  for (int i = 1; dp != NULL;dp=dp->next,i++)
-    LOG_DEBUG("child %d: %s", i, dp->name);
-  LOG_DEBUG("dev_num: %d", ip->sb->dev_num);
+  LOG_DEBUG("name: %s inode: %d", ip->entry->name, ip->ino_num);
 }

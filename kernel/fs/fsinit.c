@@ -5,13 +5,12 @@
 #include "mm/kmalloc.h"
 #include "utils/string.h"
 
-
 // extern struct inode_op fat32_inode_op;
 // extern struct file_op fat32_file_op;
 extern struct dentry_op rootfs_dentry_op;
 extern struct fs_op fat_fs_op;
 
-
+extern uint32_t rw_clus(struct super_block *sb, uint32_t cluster, int write, int user, uint64_t data, uint32_t off, uint32_t n);
 // Caller must hold img->lock.
 /**
  * @brief init a SuperBlock for dev
@@ -28,13 +27,13 @@ struct super_block *dev_fs_init(struct inode *dev)
 	struct inode *iroot = NULL;
 	char sb_buf[BUFFER_SIZE];
 
-	if ((sb = kmalloc(sizeof(struct super_block))) == NULL) {
+	if ((sb = kmalloc(sizeof(struct super_block))) == NULL)
+	{
 		return NULL;
 	}
 
-
-	init_sleeplock(&sb->sb_lock, "imgfs_sb");
-	init_spinlock(&sb->cache_lock, "imgfs_dcache");
+	init_sleeplock(&sb->sb_lock, "fs_sb");
+	init_spinlock(&sb->cache_lock, "fs_dcache");
 	sb->next = NULL;
 	sb->ref = 0;
 	sb->dev_num = dev->dev_num;
@@ -49,6 +48,14 @@ struct super_block *dev_fs_init(struct inode *dev)
 
 	sb->real_sb = fat;
 	sb->blocksz = fat->bpb.byts_per_sec;
+
+	// union fat_disk_entry de;
+  // LOG_DEBUG("test");
+  // rw_clus(sb, 2, 0, 0, (uint64_t)&de, 32, sizeof(de));
+  // LOG_DEBUG("%p", &de);
+	// LOG_DEBUG("1:%s", de.sne.name);
+
+	// PANIC("test end");
 
 	if (sb->blocksz != BUFFER_SIZE)
 		PANIC("in imgfs.c: dev_fs_init: blocksz not fit!!!");
