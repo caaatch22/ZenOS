@@ -143,7 +143,7 @@ void virtio_disk_rw(buf_t *buf, uint32_t write)
   buf0.reserved = 0;
   buf0.sector = sector;
 
-  virtio_blk_dev.ring_page.ring.desc_q[idx[0]].addr = &buf0;    //run in kernel pagetable, one to one mapping
+  virtio_blk_dev.ring_page.ring.desc_q[idx[0]].addr = (uint64_t)&buf0;    //run in kernel pagetable, one to one mapping
   virtio_blk_dev.ring_page.ring.desc_q[idx[0]].len = sizeof(buf0);
   virtio_blk_dev.ring_page.ring.desc_q[idx[0]].flags = VIRTQ_DESC_F_NEXT;
   virtio_blk_dev.ring_page.ring.desc_q[idx[0]].next = idx[1];

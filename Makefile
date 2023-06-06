@@ -24,9 +24,9 @@ OBJS = $(C_OBJS) $(AS_OBJS)
 
 HEADER_DEP = $(addsuffix .d, $(basename $(C_OBJS)))
 
-ifeq (,$(findstring link_app.o,$(OBJS)))
-	AS_OBJS += $(OBJDIR)/$K/link_app.o
-endif
+# ifeq (,$(findstring link_app.o,$(OBJS)))
+# 	AS_OBJS += $(OBJDIR)/$K/link_app.o
+# endif
 
 ifndef CPUS
 CPUS := 4

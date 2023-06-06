@@ -89,3 +89,28 @@ char* strchr(const char* s, char c)
       return (char*)s;
   return 0;
 }
+
+
+// Like strncpy but guaranteed to NUL-terminate.
+char *
+safestrcpy(char *s, const char *t, int n) {
+  char *os;
+
+  os = s;
+  if (n <= 0)
+    return os;
+  while (--n > 0 && (*s++ = *t++) != 0)
+    ;
+  *s = 0;
+  return os;
+}
+
+// convert wide char string into uchar string 
+void snstr(char *dst, wchar const *src, int len) {
+  while (len -- && *src) {
+    *dst++ = (unsigned char)(*src & 0xff);
+    src ++;
+  }
+  while(len-- > 0)
+    *dst++ = 0;
+}

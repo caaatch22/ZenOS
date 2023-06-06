@@ -6,8 +6,6 @@
 #include "fs/vfs.h"
 #include "fs/buffer.h"
 
-#define wchar uint16_t
-
 // FAT32 file attribute
 #define ATTR_READ_ONLY 0x01
 #define ATTR_HIDDEN 0x02
