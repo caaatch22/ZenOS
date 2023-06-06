@@ -23,6 +23,8 @@
 
 #define VIRT_MMIO_PLIC_BASE 0xc000000
 #define VIRT_MMIO_PLIC_SIZE (0x200000 + NCPU * 0x1000)
+#define INITRD_START 0x84200000
+#define INITRD_END 0x86a00000
 
 // qemu puts platform-level interrupt controller (PLIC) here.
 #define PLIC 0x0c000000L       // 192 MB
@@ -35,6 +37,7 @@
 #define PLIC_MCLAIM(hart) (PLIC + 0x200004 + (hart)*0x2000)
 #define PLIC_SCLAIM(hart) (PLIC + 0x201004 + (hart)*0x2000)
 
-#define USTACK_BOTTOM 0xC0000000   // 3GB, user stack lower address 
+#define USTACK_BOTTOM 0xC0000000   // 3GB, user stack lower address
+#define UTEXT_START 0x1000
 
 #endif

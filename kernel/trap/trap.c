@@ -2,6 +2,7 @@
 #include "arch/riscv.h"
 #include "arch/hw.h"
 #include "proc/proc.h"
+#include "syscall/syscall.h"
 
 extern char trapforward[], uservec[], userret[];
 extern void kernelvec();
@@ -16,13 +17,13 @@ void trapinit() { }
 
 // set up to take exceptions and traps while in the kernel.
 void set_usertrap(void) {
-  // intr_off();  // TODO: enable instr mechanism
+  intr_disable();
   w_stvec(((uint64_t)TRAPFORWARD + (uservec - trapforward)) & ~0x3); // DIRECT
 }
 
 void set_kerneltrap(void) {
   w_stvec((uint64_t)kernelvec & ~0x3); // DIRECT
-  // intr_on();  // // TODO: enable instr mechanism
+  intr_enable();
 }
 
 void kernel_interrupt_handler(uint64_t scause, uint64_t stval, uint64_t sepc) {
@@ -49,41 +50,41 @@ void user_exception_handler(uint64_t scause, uint64_t stval, uint64_t sepc) {
   case UserEnvCall:
     // if (p->killed)
     //   exit(-1);
-    // trapframe->epc += 4;
-    // intr_on();
-    // syscall();
+    trapframe->epc += 4;
+    intr_enable();
+    syscall();
     break;
   case StoreAccessFault:
-    // LOG_INFO("StoreAccessFault in user application: %p, stval = %p sepc = %p\n", scause, stval, sepc);
-    // exit(-8);
+    LOG_INFO("StoreAccessFault in user application: %p, stval = %p sepc = %p\n", scause, stval, sepc);
+    exit(-8);
     break;
   case StorePageFault:
-    // LOG_INFO("StorePageFault in user application: %p, stval = %p sepc = %p\n", scause, stval, sepc);
-    // exit(-7);
+    LOG_INFO("StorePageFault in user application: %p, stval = %p sepc = %p\n", scause, stval, sepc);
+    exit(-7);
     break;
   case InstructionAccessFault:
-    // LOG_INFO("InstructionAccessFault in user application: %p, stval = %p sepc = %p\n", scause, stval, sepc);
-    // exit(-6);
+    LOG_INFO("InstructionAccessFault in user application: %p, stval = %p sepc = %p\n", scause, stval, sepc);
+    exit(-6);
     break;
   case InstructionPageFault:
-    // LOG_INFO("InstructionPageFault in user application: %p, stval = %p sepc = %p\n", scause, stval, sepc);
-    // exit(-5);
+    LOG_INFO("InstructionPageFault in user application: %p, stval = %p sepc = %p\n", scause, stval, sepc);
+    exit(-5);
     break;
   case LoadAccessFault:
-    // LOG_INFO("LoadAccessFault in user application: %p, stval = %p sepc = %p\n", scause, stval, sepc);
-    // exit(-4);
+    LOG_INFO("LoadAccessFault in user application: %p, stval = %p sepc = %p\n", scause, stval, sepc);
+    exit(-4);
     break;
   case LoadPageFault:
-    // LOG_INFO("LoadPageFault in user application: %p, stval = %p sepc = %p\n", scause, stval, sepc);
-    // exit(-2);
+    LOG_INFO("LoadPageFault in user application: %p, stval = %p sepc = %p\n", scause, stval, sepc);
+    exit(-2);
     break;
   case IllegalInstruction:
-    // LOG_ERROR("IllegalInstruction in user application: %p, stval = %p sepc = %p\n", scause, stval, sepc);
-    // exit(-3);
+    LOG_ERROR("IllegalInstruction in user application: %p, stval = %p sepc = %p\n", scause, stval, sepc);
+    exit(-3);
     break;
   default:
-    // LOG_ERROR("Unknown exception in user application: %p, stval = %p sepc = %p\n", scause, stval, sepc);
-    // exit(-1);
+    LOG_ERROR("Unknown exception in user application: %p, stval = %p sepc = %p\n", scause, stval, sepc);
+    exit(-1);
     break;
   }
 }
@@ -99,7 +100,7 @@ void user_interrupt_handler(uint64_t scause, uint64_t stval, uint64_t sepc) {
     break;
   default:
     LOG_ERROR("Unknown interrupt in user application: %p, stval = %p sepc = %p\n", scause, stval, sepc);
-    // exit(-1);
+    exit(-1);
     break;
   }
 }
@@ -114,14 +115,14 @@ void usertrap() {
   uint64_t scause = r_scause();
   uint64_t stval = r_stval();
 
-  // KERNEL_ASSERT(!intr_get(), "");
+  ASSERT(!intr_get(), "");
   // debugcore("Enter user trap handler scause=%p", scause);
 
   w_stvec((uint64_t)kernelvec & ~0x3); // DIRECT
   // debugcore("usertrap");
   // print_cpu(mycpu());
 
-  // ASSERT((sstatus & SSTATUS_SPP) == 0, "usertrap: not from user mode");
+  ASSERT((sstatus & SSTATUS_SPP) == 0, "usertrap: not from user mode");
 
   if (scause & (1ULL << 63)) { // interrput = 1
     user_interrupt_handler(scause, stval, sepc);

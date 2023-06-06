@@ -7,6 +7,7 @@
 #include "proc/proc.h"
 #include "trap/trap.h"
 #include "logo.h"
+#include "fs/virtio_blk.h"
 
 extern char bss[];
 extern char ebss[];
@@ -30,11 +31,14 @@ void main(uint64_t mhartid, uint64_t dtb_address)
     trapinit_hart();
     pm_init();
     procinit();
-    plicinit();  
+    plicinit();
     plicinithart();
-    
+
     kernel_vminit();
     kernel_vmenable();
+
+    virtio_blk_init();
+
 
     shutdown();
   }

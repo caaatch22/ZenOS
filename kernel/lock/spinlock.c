@@ -9,7 +9,7 @@ void init_spinlock(spinlock_t *lock,char *name)
   lock->holder = 0;
 }
 
-void acqure_spinlock(spinlock_t *lock)
+void acquire_spinlock(spinlock_t *lock)
 {
   push_off();  //disable interrupt
   if((lock->locked == 1) && (lock->holder == mycpu()))
@@ -20,12 +20,10 @@ void acqure_spinlock(spinlock_t *lock)
   lock->holder = mycpu();
   __sync_synchronize();
 
-  pop_off();  //enable interrupt
 }
 
 void release_spinlock(spinlock_t *lock)
 {
-  push_off();
   if(lock->locked == 0)
     PANIC("attempt to release a unlocked spinlock\n");
   lock->locked = 0;
@@ -51,4 +49,12 @@ void pop_off()
   if(req_cpu->intr_disable_depth == 0) {
     w_sie(req_cpu->prev_intr_status);
   }
+}
+
+// Check whether this cpu is holding the lock.
+// Interrupts must be off.
+int holding(struct spinlock *lk) {
+  int r;
+  r = (lk->locked && lk->holder == mycpu());
+  return r;
 }

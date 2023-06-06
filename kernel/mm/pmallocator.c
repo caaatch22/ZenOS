@@ -12,7 +12,8 @@ void pm_init()
   physical_mem.head = NULL;
 
   pm_page_node *node = (pm_page_node *)PAGE_ROUNDUP(ekernel);
-  while(node < (pm_page_node *)PAGE_ROUNDDOWN(PHYSICAL_MEM_END)) {
+  while((node < (pm_page_node *)PAGE_ROUNDDOWN(PHYSICAL_MEM_END)) && \
+        !((node >= (pm_page_node *)PAGE_ROUNDDOWN(INITRD_START)) && (node < (pm_page_node *)PAGE_ROUNDUP(INITRD_END)))) { //do not collide with initrd
     pm_free(node);
     node = (pm_page_node*)((uint64_t)node + PAGE_SIZE);
   }

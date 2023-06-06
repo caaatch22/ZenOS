@@ -24,12 +24,8 @@ OBJS = $(C_OBJS) $(AS_OBJS)
 
 HEADER_DEP = $(addsuffix .d, $(basename $(C_OBJS)))
 
-ifeq (,$(findstring link_app.o,$(OBJS)))
-	AS_OBJS += $(OBJDIR)/$K/link_app.o
-endif
-
 ifndef CPUS
-CPUS := 4
+CPUS := 2  # temporary
 endif
 
 CFLAGS = \
@@ -39,7 +35,7 @@ CFLAGS = \
 -nostdlib \
 -fno-pie -no-pie \
 -Wno-builtin-declaration-mismatch \
-# -T $(K)/kernel.lds
+-Wl,--no-warn-rwx-segments
 
 # log flags
 LOG ?= error
@@ -83,10 +79,10 @@ kernel/kernel_app.ld: scripts/kernelld.py
 
 generate_link: kernel/kernel_app.ld kernel/link_app.S
 
-build_kernel: generate_link build_os
+build_kernel: build_os
 
 build_os: $(OBJS)
-	$(LD) $(LDFLAGS) -T kernel/kernel_app.ld -o $(OBJDIR)/os $(OBJS)
+	$(LD) $(LDFLAGS) -T kernel/kernel.lds -o $(OBJDIR)/os $(OBJS)
 	$(OBJDUMP) -S $(OBJDIR)/os > $(OBJDIR)/os.asm
 	$(OBJDUMP) -t $(OBJDIR)/os | sed '1,/SYMBOL TABLE/d; s/ .* / /; /^$$/d' > $(OBJDIR)/os.sym
 	@echo 'Build kernel done'
@@ -101,18 +97,25 @@ QEMUOPTS = \
 	-machine virt \
 	-bios default \
 	-kernel build/os \
-	-drive file=$(U)/fs-copy.img,if=none,format=raw,id=x0 \
-    -device virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0
+	-drive file=./sdcard.img,if=none,format=raw,id=x0 \
+	-device virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0 \
+	-initrd ./build/initrd.img
 
-run: build_kernel
-	$(CP) $(U)/fs.img $(U)/fs-copy.img
+run: build_kernel initrd.img
 	$(QEMU) $(QEMUOPTS)
 
 $(OBJDIR):
 	@mkdir -p $(OBJDIR)
 
-clean:
-	rm -rf $(OBJDIR) nfs/fs kernel/kernel_app.ld kernel/link_app.S
+initrd.img:
+	-sudo umount ./build/initrd.img
+	dd if=/dev/zero of=./build/initrd.img bs=512 count=81920
+	sudo mkfs.vfat -F 32 ./build/initrd.img
+	-mkdir ./build/mnt
+	sudo mount ./build/initrd.img ./build/mnt
+	sudo mkdir ./build/mnt/bin
+	sudo umount ./build/initrd.img
 
-user:
-	make -C user
+clean:
+	rm -rf $(OBJDIR)
+

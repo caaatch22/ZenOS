@@ -28,14 +28,34 @@ typedef struct pagetable* pagetable_t;
 
 uint64_t *pte_fetch(pagetable_t pt, uint64_t va);
 
+uint64_t va2pa(pagetable_t pagetable, uint64_t va);
+
 void va_page_bind(pagetable_t pt, uint64_t va, uint64_t pa, uint64_t PTE_PERM);
 
 void va_page_bind_range(pagetable_t pt, uint64_t va, uint64_t pa, uint64_t size, uint64_t PTE_PERM);
+
+void va_page_unbind(pagetable_t pt, uint64_t va, int do_free);
+
+void va_page_unbind_range(pagetable_t pt, uint64_t va, uint64_t npages, int do_free);
 
 void kernel_vmenable();
 
 void kernel_vminit();
 
+void free_user_mem_and_pagetables(pagetable_t pagetable, uint64_t total_size);
+
+void free_pagetable_pages(pagetable_t pagetable);
+
 pagetable_t create_empty_pagetable();
+
+int copyin(pagetable_t pagetable, char *dst, uint64_t srcva, uint64_t len);
+
+int copyout(pagetable_t pagetable, uint64_t dstva, char *src, uint64_t len);
+
+int copyin2(char *dst, uint64_t srcva, uint64_t len);
+
+int copyout2(uint64_t dstva, char *src, uint64_t len);
+
+int copyinstr(pagetable_t pagetable, char *dst, uint64_t srcva, uint64_t max);
 
 #endif
