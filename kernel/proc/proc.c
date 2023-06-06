@@ -8,9 +8,9 @@
 #include "mm/vm.h"
 #include "mm/pmallocator.h"
 #include "common/common.h"
-#include "fs/rootfs.h"
 
 extern void swtch(struct context *, struct context *);
+extern void rootfs_init();
 
 struct proc pool[NPROC];
 
