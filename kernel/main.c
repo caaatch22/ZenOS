@@ -48,7 +48,10 @@ void main(uint64_t mhartid, uint64_t dtb_address)
 
     virtio_blk_init();
 
-    // fs_test();
+    //for fs test, it will search a file/dir put into the img in build time
+    rootfs_init();
+    fs_test("/bin/test");
+    //end
 
     shutdown();
   }
@@ -64,12 +67,12 @@ int threadid() {
 
 #include "fs/vfs.h"
 
-void fs_test()
+void fs_test(char *path)
 {
   LOG_DEBUG("fs_test begin");
   struct inode *ip;
   struct dentry *dp;
-  ip = namei("/bin/test");
+  ip = namei(path);
 
-  LOG_DEBUG("name: %s inode: %d", ip->entry->name, ip->ino_num);
+  LOG_DEBUG("parent: %s, name: %s, inode: %d", ip->entry->parent->name, ip->entry->name, ip->ino_num);
 }
