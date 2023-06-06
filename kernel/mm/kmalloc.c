@@ -144,21 +144,19 @@ static struct kmem_allocator *get_allocator(uint64_t raw_size) {
 void *kmalloc(uint32_t size) {
 	// border check for `size`
 	if (KMEM_OBJ_MIN_SIZE > size) {
-		LOG_WARN("kmalloc", "size %d too small, reset to %d\n", size, KMEM_OBJ_MIN_SIZE);
+		LOG_WARN("size %d too small, reset to %d\n", size, KMEM_OBJ_MIN_SIZE);
 		size = KMEM_OBJ_MIN_SIZE;
 	}
 	else if (KMEM_OBJ_MAX_SIZE < size) {
-		LOG_DEBUG("kmalloc", "size %d out of border\n", size);
+		LOG_DEBUG("size %d out of border\n", size);
 		return NULL;
 	}
 	struct kmem_allocator *alloc = get_allocator(size);
-
 	// if failed to alloc
 	if (NULL == alloc) {
-		LOG_DEBUG("kmalloc", "fail to get allocator\n");
+		LOG_DEBUG("fail to get allocator\n");
 		return NULL;
 	}
-
 	// enter critical section `alloc`
 	acquire_spinlock(&(alloc->lock));
 
@@ -167,11 +165,11 @@ void *kmalloc(uint32_t size) {
 		struct kmem_node *tmp = (struct kmem_node*)pm_alloc();
 		if (NULL == tmp) {
 			release_spinlock(&(alloc->lock));
-			LOG_WARN("kmalloc", "fail to allocate a node\n");
+			LOG_WARN("fail to allocate a node\n");
 			return NULL;
 		}
 
-		LOG_INFO("kmalloc", "get one page\n");
+		LOG_INFO("get one page\n");
 
 		alloc->npages++;
 

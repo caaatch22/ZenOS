@@ -19,7 +19,7 @@ typedef struct buf_hash_elem
 } buf_hash_elem_t;
 
 typedef struct buf_hash_map {
-  struct buf_hash_elem *map[BUFFER_HASH_SIZE];
+  struct buf_hash_elem map[BUFFER_HASH_SIZE];
 } buf_hash_map_t;
 
 struct buf_payload

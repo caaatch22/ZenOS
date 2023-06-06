@@ -8,9 +8,12 @@
 #include "trap/trap.h"
 #include "logo.h"
 #include "fs/virtio_blk.h"
+#include "mm/kmalloc.h"
 
 extern char bss[];
 extern char ebss[];
+
+extern void rootfs_init();
 
 void clean_kernel_stack() {
   memset(bss, ebss - bss, 0);
@@ -35,10 +38,13 @@ void main(uint64_t mhartid, uint64_t dtb_address)
     plicinithart();
 
     kernel_vminit();
+    kmallocinit();
     kernel_vmenable();
 
     virtio_blk_init();
+    rootfs_init();
 
+    //fs_test();
 
     shutdown();
   }
@@ -54,4 +60,20 @@ void main(uint64_t mhartid, uint64_t dtb_address)
 // TODO: add this to proc
 int threadid() {
   return 1;
+}
+
+#include "fs/vfs.h"
+
+void fs_test()
+{
+  struct inode *ip;
+  struct dentry *dp;
+  ip = namei("/bin");
+  dp = ip->entry->child;
+
+  LOG_DEBUG("root dev_num: %d", ip->dev_num);
+  LOG_DEBUG("name: %s", ip->entry->name);
+  for (int i = 1; dp != NULL;dp=dp->next,i++)
+    LOG_DEBUG("child %d: %s", i, dp->name);
+  LOG_DEBUG("dev_num: %d", ip->sb->dev_num);
 }

@@ -129,7 +129,6 @@ void virtio_blk_rw(buf_t *buf, uint32_t write)
     }
     sleep(&virtio_blk_dev.desc_free[0], &virtio_blk_dev.dev_lock);
   }
-
   // format the three descriptors.
   // qemu's virtio-blk.c reads them.
 
@@ -171,7 +170,6 @@ void virtio_blk_rw(buf_t *buf, uint32_t write)
   ++ virtio_blk_dev.ring_page.ring.avail_q.idx;
 
   *VIRTIO_MMIO_REG(VIRTIO_MMIO_QUEUE_NOTIFY_OFF) = 0; // value is queue number
-
   while(buf->using == 1) {
     sleep(buf, &virtio_blk_dev.dev_lock);
   }
@@ -185,7 +183,6 @@ void virtio_blk_rw(buf_t *buf, uint32_t write)
 void virtio_blk_intr()
 {
   acquire_spinlock(&virtio_blk_dev.dev_lock);
-
   while((virtio_blk_dev.index % VIRTIO_QUEUE_SIZE) != (virtio_blk_dev.ring_page.ring.used_q.idx % VIRTIO_QUEUE_SIZE)){
     int idx = virtio_blk_dev.ring_page.ring.used_q.ring[virtio_blk_dev.ring_page.ring.used_q.idx].id;
 

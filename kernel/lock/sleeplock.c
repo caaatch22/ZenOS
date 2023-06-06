@@ -1,6 +1,7 @@
 #include "lock/sleeplock.h"
 #include "lock/spinlock.h"
 #include "proc/proc.h"
+#include "common/common.h"
 
 // sleep(void *, spinlock_t *);
 // wakeup(void *);
@@ -16,7 +17,7 @@ void init_sleeplock(sleeplock_t *lock, char *name)
 void acquire_sleeplock(sleeplock_t *lock)
 {
   acquire_spinlock(&lock->spinlock);
-  while(lock->locked = 1) {
+  while(lock->locked == 1) {
     sleep(lock, &lock->spinlock);
   }
 

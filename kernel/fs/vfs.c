@@ -64,6 +64,7 @@ struct inode *create(char *path, uint32_t type, struct inode *dp)
 		return NULL;
 	}
 
+
 	struct super_block *sb = dp->sb;
 	acquire_spinlock(&sb->cache_lock);
 	de = de_check_cache(dp->entry, name);
@@ -80,28 +81,23 @@ struct inode *create(char *path, uint32_t type, struct inode *dp)
 		}
 		return ip;
 	}
-
 	if ((de = kmalloc(sizeof(struct dentry))) == NULL) {
 		iunlockput(dp);
 		return NULL;
 	}
-
 	if ((ip = dp->op->create(dp, name, type)) == NULL) {
 		iunlockput(dp);
 		kfree(de);
 		return NULL;
 	}
-
 	idup(ip);
 	ip->state = I_STATE_VALID;
 	ip->entry = de;
-
 	safestrcpy(de->name, name, MAX_NAME_SIZE + 1);
 	de->child = NULL;
 	de->mount = NULL;
 	de->inode = ip;
 	de->op = &rootfs_dentry_op;
-
 	acquire_spinlock(&sb->cache_lock);
 	de->parent = dp->entry;
 	de->next = dp->entry->child;
@@ -113,7 +109,6 @@ struct inode *create(char *path, uint32_t type, struct inode *dp)
 		iput(ip);
 		return NULL;
 	}
-
 	iunlockput(dp);
 	ilock(ip);
 
@@ -445,6 +440,8 @@ static struct inode *lookup_path(char *path, int parent, char *name, struct inod
 {
 	struct inode *ip, *next;  // 'ip' is the inode we are looking for
 	struct proc *p = curr_proc();
+
+
 	if (*path == '/') {  // 绝对路径
 		if(strncmp("/proc/self/exe", path, 15) == 0){  // 我们没有这个伪文件系统，通过另一种方式实现。
 			if( p->elf )
@@ -467,7 +464,8 @@ static struct inode *lookup_path(char *path, int parent, char *name, struct inod
 			iunlockput(ip);
 			return NULL;
 		}
-		if (parent && *path == '\0') {
+		if (parent && *path == '\0')
+		{
 			iunlock(ip);
 			return ip;
 		}
@@ -615,7 +613,6 @@ int do_mount(struct inode *dev, struct inode *mntpoint, char *type, uint32_t fla
 			break;
 		}
 	}
-
 	// checking
 	if (strncmp("vfat", type, 5) != 0 &&
 		strncmp("fat32", type, 6) != 0)
@@ -639,9 +636,10 @@ int do_mount(struct inode *dev, struct inode *mntpoint, char *type, uint32_t fla
 	}
 
 	struct dentry *dmnt = mntpoint->entry;
-
 	// init super_block of dev(including:sb's attribute, inode, dentry)
+
 	struct super_block *dev_sb = dev_fs_init(dev);
+
 	if (dev_sb == NULL)
 		return -1;
 

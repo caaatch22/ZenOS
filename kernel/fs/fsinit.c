@@ -32,6 +32,7 @@ struct super_block *dev_fs_init(struct inode *dev)
 		return NULL;
 	}
 
+
 	init_sleeplock(&sb->sb_lock, "imgfs_sb");
 	init_spinlock(&sb->cache_lock, "imgfs_dcache");
 	sb->next = NULL;
@@ -39,6 +40,7 @@ struct super_block *dev_fs_init(struct inode *dev)
 	sb->dev_num = dev->dev_num;
 
 	sb->op = fat_fs_op;
+
 
 	if ( (sb->op.read(sb, 0, (char*)sb_buf, 0, 0, BUFFER_SIZE)) == 0 )
 		goto fail;

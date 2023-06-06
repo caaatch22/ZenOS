@@ -91,7 +91,7 @@ void proc_free_mem_and_pagetable(struct proc* p) {
   va_page_unbind(p->pagetable, TRAPFORWARD, FALSE); // unmap, don't recycle physical, shared
   va_page_unbind(p->pagetable, TRAPFRAME, TRUE);   // unmap, should recycle physical
   p->trapframe = NULL;
-  
+
   // dont need it, cause we currently dont support shmem
   // // unmap shared memory
   // for (int i = 0; i < MAX_PROC_SHARED_MEM_INSTANCE; i++) {
@@ -212,7 +212,6 @@ void sleep(void *waiting_target, struct spinlock *lk) {
   // (wakeup locks p->lock),
   // so it's okay to release lk.
   // print_proc(p);
-
   acquire_spinlock(&p->lock);
 
   release_spinlock(lk);

@@ -40,32 +40,35 @@ void buffer_init(void)
   }
 
   for (count = 0; count < BUFFER_HASH_SIZE; ++count) {
-    blk_buf_list.hash.map[count] = NULL;
+    blk_buf_list.hash.map[count].buf = NULL;
+    blk_buf_list.hash.map[count].dev_id = (uint32_t)-1;
+    blk_buf_list.hash.map[count].sector = (uint64_t)-1;
   }
-
 }
 
 buf_t *buffer_hash_search(uint32_t dev_id, uint64_t sector, buf_hash_map_t *hash)
 {
   uint32_t count;
   for (count = 0; count < BUFFER_HASH_SIZE; ++count) {
-    if (hash->map[(sector % BUFFER_HASH_SIZE + count) % BUFFER_HASH_SIZE]->sector == sector && \
-        hash->map[(sector % BUFFER_HASH_SIZE + count) % BUFFER_HASH_SIZE]->dev_id == dev_id ) // if collide, move to next slot;
-      return hash->map[(sector % BUFFER_HASH_SIZE + count) % BUFFER_HASH_SIZE]->buf;
-    else if(hash->map[(sector % BUFFER_HASH_SIZE + count) % BUFFER_HASH_SIZE] == NULL)
+    if (hash->map[(sector + count) % BUFFER_HASH_SIZE].buf != NULL && \
+        hash->map[(sector + count) % BUFFER_HASH_SIZE].sector == sector && \
+        hash->map[(sector + count) % BUFFER_HASH_SIZE].dev_id == dev_id ) // if collide, move to next slot;
+      return hash->map[(sector + count) % BUFFER_HASH_SIZE].buf;
+
+    if(hash->map[(sector + count) % BUFFER_HASH_SIZE].buf == NULL)
       break;
   }
-  return NULL;
+    return NULL;
 }
 
 void buffer_hash_insert(buf_t *buf, buf_hash_map_t *hash)
 {
   uint32_t count;
   for (count = 0; count < BUFFER_HASH_SIZE; ++count) {
-    if(hash->map[(buf->sector % BUFFER_HASH_SIZE + count) % BUFFER_HASH_SIZE]==NULL) {
-      hash->map[(buf->sector % BUFFER_HASH_SIZE + count) % BUFFER_HASH_SIZE]->buf = buf;
-      hash->map[(buf->sector % BUFFER_HASH_SIZE + count) % BUFFER_HASH_SIZE]->sector = buf->sector;
-      hash->map[(buf->sector % BUFFER_HASH_SIZE + count) % BUFFER_HASH_SIZE]->dev_id = buf->dev_id;
+    if(hash->map[(buf->sector % BUFFER_HASH_SIZE + count) % BUFFER_HASH_SIZE].buf == NULL) {
+      hash->map[(buf->sector % BUFFER_HASH_SIZE + count) % BUFFER_HASH_SIZE].buf = buf;
+      hash->map[(buf->sector % BUFFER_HASH_SIZE + count) % BUFFER_HASH_SIZE].sector = buf->sector;
+      hash->map[(buf->sector % BUFFER_HASH_SIZE + count) % BUFFER_HASH_SIZE].dev_id = buf->dev_id;
       return;
     }
   }
@@ -76,9 +79,9 @@ void buffer_hash_insert(buf_t *buf, buf_hash_map_t *hash)
 void buffer_hash_delete(buf_t *buf, buf_hash_map_t *hash) {
   uint32_t count;
   for (count = 0; count < BUFFER_HASH_SIZE; ++count) {
-    if(hash->map[(buf->sector%BUFFER_HASH_SIZE+count)%BUFFER_HASH_SIZE]->sector == buf->sector && \
-       hash->map[(buf->sector%BUFFER_HASH_SIZE+count)%BUFFER_HASH_SIZE]->dev_id == buf->dev_id ) {
-      hash->map[(buf->sector % BUFFER_HASH_SIZE + count) % BUFFER_HASH_SIZE] = NULL;
+    if(hash->map[(buf->sector%BUFFER_HASH_SIZE+count)%BUFFER_HASH_SIZE].sector == buf->sector && \
+       hash->map[(buf->sector%BUFFER_HASH_SIZE+count)%BUFFER_HASH_SIZE].dev_id == buf->dev_id ) {
+      hash->map[(buf->sector % BUFFER_HASH_SIZE + count) % BUFFER_HASH_SIZE].buf = NULL;
       return;
     }
   }
@@ -89,19 +92,23 @@ void buffer_hash_delete(buf_t *buf, buf_hash_map_t *hash) {
 buf_t *buffer_fetch(uint32_t dev_id, uint64_t sector, buf_list_t *buf_list)
 {
   acquire_spinlock(&buf_list->buffer_lock);
-
   buf_t *target;
   target = buffer_hash_search(dev_id, sector, &buf_list->hash);
 
   if(!target) {
     target = buffer_alloc(buf_list);
     target->sector = sector;
+    target->dev_id = dev_id;
     target->read_pending = 1;
+    init_sleeplock(&target->lock,"buffer_lock");
+    buffer_hash_insert(target, &buf_list->hash);
+
     release_spinlock(&buf_list->buffer_lock);
+
     acquire_sleeplock(&target->lock);
 
-    blk_op_table[dev_id].rw(target, 0); // will request a read and sleep;
 
+    blk_op_table[dev_id].rw(target, 0); // will request a read and sleep;
     release_sleeplock(&target->lock);
     acquire_spinlock(&buf_list->buffer_lock);
     target->dirty = 0;
@@ -110,9 +117,8 @@ buf_t *buffer_fetch(uint32_t dev_id, uint64_t sector, buf_list_t *buf_list)
     buffer_hash_insert(target, &buf_list->hash);
   }
 
-  while (target->read_pending = 1)
+  while (target->read_pending == 1)
     ;
-
   buffer_lru_top(target, buf_list);
 
   release_spinlock(&buf_list->buffer_lock);
