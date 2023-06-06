@@ -97,7 +97,7 @@ QEMUOPTS = \
 	-machine virt \
 	-bios default \
 	-kernel build/os \
-	-drive file=local/sdcard.img,if=none,format=raw,id=x0 \
+	-drive file=./sdcard.img,if=none,format=raw,id=x0 \
 	-device virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0 \
 	-initrd ./build/initrd.img
 

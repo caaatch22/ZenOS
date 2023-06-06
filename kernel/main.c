@@ -38,7 +38,6 @@ void main(uint64_t mhartid, uint64_t dtb_address)
     kernel_vmenable();
 
     virtio_blk_init();
-    buffer_init();
 
 
     shutdown();

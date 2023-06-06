@@ -41,7 +41,6 @@ void virtio_blk_init(void)
   feature &= ~(1 << VIRTIO_RING_F_EVENT_IDX);
   feature &= ~(1 << VIRTIO_RING_F_INDIRECT_DESC);
   *VIRTIO_MMIO_REG(VIRTIO_MMIO_HOST_FEAT_OFF) = feature;
-  PANIC("%x", feature);
 
   //lagacy, no feature ok
 

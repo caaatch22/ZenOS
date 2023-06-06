@@ -174,6 +174,10 @@ void kernel_vminit()
 
   kernel_pagetable = (pagetable_t) pm_alloc();
 
+  va_page_bind_range(kernel_pagetable, VIRT_MMIO_VIRTIO_BASE, VIRT_MMIO_VIRTIO_BASE, VIRT_MMIO_VIRTIO_SIZE, PTE_R | PTE_W);
+
+  va_page_bind_range(kernel_pagetable, VIRT_MMIO_PLIC_BASE, VIRT_MMIO_PLIC_BASE, VIRT_MMIO_PLIC_SIZE, PTE_R | PTE_W);
+
   // map kernel text executable and read-only.
   LOG_DEBUG("kernel text va=%p -> [%p, %p]", PHYSICAL_MEM_BASE
             , PHYSICAL_MEM_BASE, (uint64_t)etext);
