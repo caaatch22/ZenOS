@@ -34,3 +34,13 @@ void release_sleeplock(sleeplock_t *lock)
   wakeup(lock);
   release_spinlock(&lock->spinlock);
 }
+
+int holdingsleep(struct sleeplock *lk)
+{
+  int r;
+
+  acquire_spinlock(&lk->spinlock);
+  r = lk->locked && (lk->holder == curr_proc());
+  release_spinlock(&lk->spinlock);
+  return r;
+}

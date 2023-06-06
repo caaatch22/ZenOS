@@ -79,7 +79,7 @@ int fat_update_entry(struct inode *ip);
 int fat_remove_entry(struct inode *ip);
 int fat_truncate_file(struct inode *ip);
 int fat_stat_file(struct inode *ip, struct kstat *st);
-int fat_read_dir(struct inode *dir, struct dirent *dent, uint32_t off);
+int fat_read_dir(struct super_block *, struct inode *dir, struct dirent *dent, uint32_t off);
 int fat_read_file(struct inode *ip, uint32_t user_dst, uint64_t dst, uint32_t off, uint32_t n);
 int fat_write_file(struct inode *ip, uint32_t user_src, uint64_t src, uint32_t off, uint32_t n);
 

@@ -912,7 +912,7 @@ excep:
  * Read a directory from off, and stat the next file. Skip empty entries.
  * @return  bytes that the entries take up, or 0 if no entries
  */
-int fat_read_dir(struct inode *ip, struct dirent *dent, uint32_t off)
+int fat_read_dir(struct super_block *sb, struct inode *ip, struct dirent *dent, uint32_t off)
 {
     if (!(i2fat(ip)->attribute & ATTR_DIRECTORY))
         return -1;
@@ -938,6 +938,7 @@ int fat_read_dir(struct inode *ip, struct dirent *dent, uint32_t off)
 
     dent->d_ino_num = entry.first_clus;
     dent->d_off = off2;
+    dent->d_reclen = size;
     dent->d_type = (entry.attribute & ATTR_DIRECTORY) ? T_DIR : T_FILE;
 
     return ret;

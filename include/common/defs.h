@@ -21,4 +21,6 @@ typedef int bool;
 #define TRUE 1
 #define FALSE 0
 
+#define NELEM(x) (sizeof(x)/sizeof((x)[0]))
+
 #endif

@@ -51,7 +51,7 @@ struct proc {
   uint64_t priority;
 //   uint64_t cpu_time;          // ms, user and kernel
 //   uint64_t last_start_time;   // ms
-  struct file *files[FD_MAX]; // Opened files
+  struct file *ofile[FD_MAX]; // Opened files
   struct inode *cwd;          // Current directory
   struct inode *elf;          //self-file
   //   struct shared_mem *shmem[MAX_PROC_SHARED_MEM_INSTANCE];

@@ -3,6 +3,7 @@
 
 #include "mm/pmallocator.h"
 #include "lock/spinlock.h"
+#include "lock/sleeplock.h"
 
 #define BUFFER_SIZE 512
 #define BUFFER_PAGE_OCCUPY 5
@@ -10,7 +11,8 @@
 
 #define BUFFER_HASH_SIZE BUFFER_MAX_NUM //TODO
 
-typedef struct buf_hash_elem {
+typedef struct buf_hash_elem
+{
   uint64_t sector;
   uint32_t dev_id;
   struct buf *buf;
@@ -27,13 +29,16 @@ struct buf_payload
 
 typedef struct buf {
   struct buf_payload *payload;
+  uint32_t ref;
   uint8_t vaild;
   uint32_t dev_id;
   uint64_t sector;
   uint8_t dirty;
   uint8_t read_pending;
+  uint8_t using;
   struct buf *next;
   struct buf *prev;
+  struct sleeplock lock;
 } buf_t;
 
 typedef struct buf_list {
@@ -51,6 +56,7 @@ void buffer_evict(buf_t *, buf_list_t *);                // evict the elem from 
 void buffer_lru_top(buf_t *, buf_list_t *);
 void buffer_flush(buf_t *);
 void buffer_list_flush(buf_list_t *);
+void buffer_release(buf_t *);
 
 void buffer_hash_insert(buf_t *, buf_hash_map_t *); // insert a buf to its slot in hash map;
 void buffer_hash_delete(buf_t *, buf_hash_map_t *); // delete a buf from hash map;

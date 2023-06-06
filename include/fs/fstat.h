@@ -4,11 +4,10 @@
 #include "common/defs.h"
 #include "fs/vfs.h"
 
-#ifndef MAX_NAME_SIZE 
+#ifndef MAX_NAME_SIZE
 #define MAX_NAME_SIZE 255
 #endif
 
-// xv6自用stat->mode
 #define T_DIR     1   // Directory
 #define T_FILE    2   // File
 #define T_DEVICE  3   // Device
@@ -47,6 +46,7 @@ struct dirent {
   uint64_t d_ino_num;
   uint64_t d_off;
   uint8_t d_type;
+  uint16_t d_reclen;
   char d_name[MAX_NAME_SIZE + 1];
 };
 

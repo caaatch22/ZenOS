@@ -112,7 +112,7 @@ uint32_t alloc3_desc(uint32_t *idx)
   return 0;
 }
 
-void virtio_disk_rw(buf_t *buf, uint32_t write)
+void virtio_blk_rw(buf_t *buf, uint32_t write)
 {
   uint64_t sector = buf->sector;
 
@@ -164,7 +164,7 @@ void virtio_disk_rw(buf_t *buf, uint32_t write)
   virtio_blk_dev.ring_page.ring.desc_q[idx[2]].next = 0;
 
   // record struct buf for virtio_disk_intr().
-  buf->read_pending = 1;
+  buf->using = 1;
   virtio_blk_dev.info[idx[0]].buf = buf;
 
   virtio_blk_dev.ring_page.ring.avail_q.ring[virtio_blk_dev.ring_page.ring.avail_q.idx % VIRTIO_QUEUE_SIZE] = idx[0];
@@ -173,7 +173,7 @@ void virtio_disk_rw(buf_t *buf, uint32_t write)
 
   *VIRTIO_MMIO_REG(VIRTIO_MMIO_QUEUE_NOTIFY_OFF) = 0; // value is queue number
 
-  while(buf->read_pending == 1) {
+  while(buf->using == 1) {
     sleep(buf, &virtio_blk_dev.dev_lock);
   }
 
@@ -193,7 +193,7 @@ void virtio_blk_intr()
     if(virtio_blk_dev.info[idx].status != 0)
       PANIC("virtio_disk_intr status");
 
-    virtio_blk_dev.info[idx].buf->read_pending = 0;   // disk is done with buf
+    virtio_blk_dev.info[idx].buf->using = 0;   // disk is done with buf
     wakeup(virtio_blk_dev.info[idx].buf);
 
     virtio_blk_dev.ring_page.ring.used_q.idx = (virtio_blk_dev.ring_page.ring.used_q.idx + 1) % VIRTIO_QUEUE_SIZE;
