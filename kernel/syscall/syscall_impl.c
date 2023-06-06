@@ -7,6 +7,7 @@
 #include "fs/fstat.h"
 #include "fs/pipe.h"
 #include "fs/vfs.h"
+#include "proc/proc.h"
 
 #define min(a, b) (a) < (b) ? (a) : (b);
 
@@ -130,12 +131,12 @@ int sys_chdir(char *path_va) {
   if (copyinstr(p->pagetable, path, (uint64_t)path_va, 128) != 0) {
     return -2;
   }
-  ip = inode_by_name(path);
+  ip = namei(path);
   if (ip == NULL) {
     return -1;
   }
   ilock(ip);
-  if (ip->type != T_DIR) {
+  if (ip->mode != T_DIR) {
     iunlockput(ip);
     return -1;
   }
@@ -211,11 +212,30 @@ int sys_chdir(char *path_va) {
 //   return wait(pid, wstatus_va);
 // }
 
-// uint64_t sys_time_ms() {
-//   // printf("core %d %d  time=%p\n",cpuid(), intr_get(),(r_sie() & SIE_STIE));
-//   return get_time_ms();
-// }
+uint64_t sys_times(struct tms *tms_va) {
+  // print("core %d %d  time=%p\n",cpuid(), intr_get(),(r_sie() & SIE_STIE));
 
+  // needn't to get CPU time if the given tms address is NULL
+  if (tms_va == NULL) {
+    return get_tick();
+  }
+
+  struct tms tms;
+  struct proc *p = curr_proc();
+  acquire_spinlock(&p->lock);
+  if (get_cpu_time(p, &tms) < 0) {
+    release_spinlock(&p->lock);
+    LOG_INFO("sys_times: get_cpu_time failed");
+    return -1;
+  }
+  release_spinlock(&p->lock);
+  if (copyout(p->pagetable, (uint64_t)tms_va, (char *)&tms, sizeof(struct tms)) < 0) {
+    LOG_INFO("sys_times: copyout failed");
+    return -1;
+  }
+
+  return get_tick();
+}
 
 int sys_close(int fd) {
   struct proc *p = curr_proc();
@@ -240,13 +260,14 @@ int sys_close(int fd) {
   return 0;
 }
 
-// int sys_open( char *pathname_va, int flags){
+// int sys_open(char *pathname_va, int flags){
 //   LOG_DEBUG("sys_open");
 //   struct proc *p = curr_proc();
 //   char path[MAXPATH];
 //   copyinstr(p->pagetable, path, (uint64_t)pathname_va, MAXPATH);
 //   return fileopen(path, flags);
 // }
+
 
 // int64 sys_mmap(void *start, uint64_t len, int prot) {
 //     if (len == 0)
@@ -335,7 +356,7 @@ ssize_t sys_read(int fd, void *dst_va, size_t len) {
   if (f == NULL) {
     return -1;
   }
-  return fileread(f, dst_va, len);
+  return fileread(f, (uint64_t)dst_va, len);
 }
 
 ssize_t sys_write(int fd, void *src_va, size_t len) {
@@ -348,7 +369,7 @@ ssize_t sys_write(int fd, void *src_va, size_t len) {
     return -1;
   }
 
-  return filewrite(f, src_va, len);
+  return filewrite(f, (uint64_t)src_va, len);
 }
 
 int sys_dup(int oldfd) {

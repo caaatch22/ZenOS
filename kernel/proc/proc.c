@@ -278,3 +278,39 @@ int fdalloc(struct file *f) {
   }
   return -1;
 }
+
+
+
+// get the given process and its child processes running time in ticks
+// include kernel time and user time
+int get_cpu_time(struct proc *p, struct tms *tms) {
+  if (p == NULL) {
+   LOG_INFO("get_cpu_time: p is NULL");
+   return -1;
+  }
+  if (tms == NULL) {
+    LOG_INFO("get_cpu_time: tms is NULL");
+    return -1;
+  }
+
+  tms->tms_utime = p->user_time;
+  tms->tms_stime = p->kernel_time;
+  tms->tms_cutime = 0;
+  tms->tms_cstime = 0;
+
+  acquire_spinlock(&pool_lock);
+  struct proc *child;
+  for (child = pool; child < &pool[NPROC]; child++) {
+    if (child != p) {// avoid deadlock
+      acquire_spinlock(&child->lock);
+      if (child->state != UNUSED && child->parent == p) {
+        // found a child
+        tms->tms_cutime += child->user_time;
+        tms->tms_cstime += child->kernel_time;
+      }
+      release_spinlock(&child->lock);
+    }
+  }
+  release_spinlock(&pool_lock);
+  return 0;
+}

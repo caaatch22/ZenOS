@@ -18,7 +18,7 @@ pid_t sys_getpid(void);
 
 pid_t sys_getppid();
 
-int sys_open( char *pathname_va, int flags);
+int sys_open(char *pathname_va, int flags);
 
 int sys_mknod( char *pathname_va, short major, short minor);
 
@@ -34,7 +34,7 @@ int sys_close(int fd);
 
 pid_t sys_fork(void);
 
-uint64_t sys_time_ms();
+uint64_t sys_times(struct tms *tms_va);
 
 int sys_sleep(unsigned long long time_in_ms);
 

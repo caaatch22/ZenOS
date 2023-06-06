@@ -1,7 +1,7 @@
 #include "syscall/syscall_ids.h"
 #include "syscall/syscall_impl.h"
 #include "arch/riscv.h"
-// #include "arch/timer.h"
+#include "arch/timer.h"
 #include "proc/proc.h"
 #include "trap/trap.h"
 #include "common/common.h"
@@ -115,9 +115,9 @@ void syscall()
   case SYS_read:
     ret = sys_read(args[0], (void *)args[1], args[2]);
     break;
-//   case SYS_open:
-//     ret = sys_open((char *)args[0], args[1]);
-//     break;
+  // case SYS_open:
+  //   ret = sys_open((char *)args[0], args[1]);
+  //   break;
   case SYS_close:
     ret = sys_close(args[0]);
     break;
@@ -151,12 +151,12 @@ void syscall()
 //   case SYS_waitpid:
 //     ret = sys_waitpid(args[0], (int *)args[1]);
 //     // break;
-//   case SYS_time_ms:
-//     ret = sys_time_ms();
-//     break;
-//   case SYS_mknod:
-//     ret = sys_mknod((char *)args[0], args[1], args[2]);
-//     break;
+  case SYS_times:
+    ret = sys_times((struct tms *)args[0]);
+    break;
+    //   case SYS_mknod:
+    //     ret = sys_mknod((char *)args[0], args[1], args[2]);
+    //     break;
   case SYS_pipe2:
     ret = sys_pipe((int(*)[2])args[0]);
     break;

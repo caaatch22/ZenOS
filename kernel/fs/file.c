@@ -195,9 +195,9 @@ int filereaddir(struct file *f, uint64_t addr, uint64_t len)
 		len -= dent.d_reclen;
 
 	}
-	//acquire(&f->lock);
+	//acquire_spinlock(&f->lock);
 	f->off = off;
-	//release(&f->lock);
+	//release_spinlock(&f->lock);
 	iunlock(ip);
 
 	if (ret < 0)

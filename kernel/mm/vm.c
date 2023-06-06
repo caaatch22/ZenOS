@@ -276,7 +276,7 @@ int copyinstr(pagetable_t pagetable, char *dst, uint64_t srcva, uint64_t max) {
   while (got_null == 0 && max > 0) {
     va0 = PAGE_ROUNDDOWN(srcva);
     pa0 = PTE2PA_PPN(*pte_fetch(pagetable, va0));
-    pa0 = walkaddr(pagetable, va0);
+    pa0 = va2pa(pagetable, va0);
     if (pa0 == 0) {
       LOG_DEBUG("bad addr");
       return -1;

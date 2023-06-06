@@ -328,6 +328,22 @@ static inline void w_sstatus(uint64_t x)
       : "r"(x));
 }
 
+// wall clock tik counter
+static inline uint64_t r_time() {
+  uint64_t x;
+  asm volatile("csrr %0, time"
+               : "=r"(x));
+  return x;
+}
+
+// machine clock cycle counter
+static inline uint64_t r_cycle() {
+  uint64_t x;
+  asm volatile("csrr %0, cycle"
+               : "=r"(x));
+  return x;
+}
+
 // enable device interrupts
 static inline void intr_enable() { w_sstatus(r_sstatus() | SSTATUS_SIE); }
 

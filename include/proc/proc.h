@@ -25,6 +25,14 @@ enum procstate {
   ZOMBIE
 };
 
+// process CPU time
+struct tms {
+  uint64_t tms_utime;
+  uint64_t tms_stime;
+  uint64_t tms_cutime;
+  uint64_t tms_cstime;
+};
+
 // Per-process state
 struct proc {
   spinlock_t lock;
@@ -49,8 +57,8 @@ struct proc {
   uint64_t heap_sz;
   uint64_t stride;
   uint64_t priority;
-//   uint64_t cpu_time;          // ms, user and kernel
-//   uint64_t last_start_time;   // ms
+  uint64_t user_time;            // us, user only
+  uint64_t kernel_time;          // us, kernel only
   struct file *ofiles[FD_MAX]; // Opened files
   struct inode *cwd;          // Current directory
   struct inode *elf;          //self-file
