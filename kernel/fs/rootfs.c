@@ -12,8 +12,8 @@ int dummy_inode_iop1(struct inode *ip) { return -1; }
 int dummy_file_rw(struct inode *ip, uint32_t usr, uint64_t dst, uint32_t off, uint32_t n) { return 0; }
 int dummy_file_readdir(struct super_block *sb, struct inode *dp, struct dirent *dent, uint32_t off) { return -1; }
 
-static int fs_write(struct super_block *sb, int usr, char *src, uint64_t sectorno, uint64_t off, uint64_t len);
-static int fs_read(struct super_block *sb, int usr, char *dst, uint64_t sectorno, uint64_t off, uint64_t len);
+static int fs_write(struct super_block *sb, uint32_t usr, char *src, uint64_t sectorno, uint64_t off, uint64_t len);
+static int fs_read(struct super_block *sb, uint32_t usr, char *dst, uint64_t sectorno, uint64_t off, uint64_t len);
 static int fs_clear(struct super_block *sb, uint64_t sectorno, uint64_t sectorcnt);
 static int fs_inode_getattr(struct inode *ip, struct kstat *st);
 static int file_readdir(struct super_block *sb, struct inode * ip, struct dirent *dent, uint32_t off);
@@ -203,7 +203,7 @@ void rootfs_init()
  * @param off offset in this buf
  *
  */
-static int fs_write(struct super_block *sb, int usr, char *src, uint64_t sectorno, uint64_t off, uint64_t len)
+static int fs_write(struct super_block *sb, uint32_t usr, char *src, uint64_t sectorno, uint64_t off, uint64_t len)
 {
 	if (off + len > BUFFER_SIZE)
 		PANIC("rootfs write out of boundry");
@@ -225,7 +225,7 @@ static int fs_write(struct super_block *sb, int usr, char *src, uint64_t sectorn
 }
 
 
-static int fs_read(struct super_block *sb, int usr, char *dst, uint64_t sectorno, uint64_t off, uint64_t len)
+static int fs_read(struct super_block *sb, uint32_t usr, char *dst, uint64_t sectorno, uint64_t off, uint64_t len)
 {
 	if (off + len > BUFFER_SIZE)
 		PANIC("rootfs read out of boundry");

@@ -40,8 +40,8 @@ struct fs_op {
 	struct inode *(*alloc_inode)(struct super_block *sb);
 	void (*destroy_inode)(struct inode *ip);
 	// off: offset in the block
-	int (*write)(struct super_block *sb, int usr, char *src, uint64_t blockno, uint64_t off, uint64_t len);
-	int (*read)(struct super_block *sb, int usr, char *dst, uint64_t blockno, uint64_t off, uint64_t len);
+	int (*write)(struct super_block *sb, uint32_t usr, char *src, uint64_t blockno, uint64_t off, uint64_t len);
+	int (*read)(struct super_block *sb, uint32_t usr, char *dst, uint64_t blockno, uint64_t off, uint64_t len);
 	int (*clear)(struct super_block *sb, uint64_t blockno, uint64_t blockcnt);
 };
 
