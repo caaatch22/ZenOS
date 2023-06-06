@@ -30,7 +30,7 @@ extern struct blk_ops blk_op_table[];
 
 int zero_read(struct inode *ip, uint32_t usr, uint64_t dst, uint32_t off, uint32_t n)
 {
-	memset(dst, 0, n);
+	memset((void*)dst, 0, n);
 	return n;
 }
 
@@ -213,10 +213,11 @@ static int fs_write(struct super_block *sb, uint32_t usr, char *src, uint64_t se
 	int ret;
 
 	if (usr) {
-		ret = copyin2(b->payload + off, src, len);
+		ret = copyin2(b->payload + off, (uint64_t)src, len);
 	}
 	else {
-		ret = memmove(b->payload + off, src, len);
+		memmove(b->payload + off, src, len);
+		ret = 0;
 	}
 
 	buffer_release(b);
@@ -233,20 +234,20 @@ static int fs_read(struct super_block *sb, uint32_t usr, char *dst, uint64_t sec
 	LOG_INFO("sec:%d off:%d len:%d\n", sectorno, off, len);
 
 	struct buf *b = buffer_fetch(sb->dev_num, sectorno, &blk_buf_list);
+	int ret;
 
 	if (usr) {
-		copyout2(dst, b->payload + off, len);
+		ret = copyout2((uint64_t)dst, b->payload + off, len);
 	}
 	else {
 		memmove(dst, b->payload + off, len);
+		ret = 0;
 	}
-
 
 	buffer_release(b);
 
-	return len;
+	return ret < 0 ? -1 : len;
 }
-
 
 static int fs_clear(struct super_block *sb, uint64_t sectorno, uint64_t sectorcnt)
 {

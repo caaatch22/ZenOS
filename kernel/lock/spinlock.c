@@ -50,3 +50,11 @@ void pop_off()
     w_sie(req_cpu->prev_intr_status);
   }
 }
+
+// Check whether this cpu is holding the lock.
+// Interrupts must be off.
+int holding(struct spinlock *lk) {
+  int r;
+  r = (lk->locked && lk->holder == mycpu());
+  return r;
+}

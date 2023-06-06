@@ -28,7 +28,7 @@ int consolewrite_file(struct inode *ip, uint32_t usr, uint64_t src, uint32_t off
     copyin2(output, src, n);
   }
   else {
-    memcpy(output, src, n);
+    memcpy(output, (void*)src, n);
   }
   print(output);
 

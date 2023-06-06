@@ -17,5 +17,6 @@ void acquire_spinlock(spinlock_t *);
 void release_spinlock(spinlock_t *);
 void push_off();
 void pop_off();
+int holding(struct spinlock *lk);
 
 #endif

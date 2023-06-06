@@ -24,12 +24,8 @@ OBJS = $(C_OBJS) $(AS_OBJS)
 
 HEADER_DEP = $(addsuffix .d, $(basename $(C_OBJS)))
 
-# ifeq (,$(findstring link_app.o,$(OBJS)))
-# 	AS_OBJS += $(OBJDIR)/$K/link_app.o
-# endif
-
 ifndef CPUS
-CPUS := 4
+CPUS := 2  # temporary
 endif
 
 CFLAGS = \
@@ -122,7 +118,5 @@ initrd.img:
 	umount ./build/initrd.img
 
 clean:
-	rm -rf $(OBJDIR) nfs/fs kernel/kernel_app.ld kernel/link_app.S
+	rm -rf $(OBJDIR)
 
-user:
-	make -C user

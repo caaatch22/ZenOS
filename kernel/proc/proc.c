@@ -84,6 +84,33 @@ pagetable_t proc_pagetable(struct proc *p) {
   return pagetable;
 }
 
+// Free a process's page table, and free the
+// physical memory it refers to.
+void proc_free_mem_and_pagetable(struct proc* p) {
+  va_page_unbind(p->pagetable, TRAPFORWARD, FALSE); // unmap, don't recycle physical, shared
+  va_page_unbind(p->pagetable, TRAPFRAME, TRUE);   // unmap, should recycle physical
+  p->trapframe = NULL;
+  
+  // dont need it, cause we currently dont support shmem
+  // // unmap shared memory
+  // for (int i = 0; i < MAX_PROC_SHARED_MEM_INSTANCE; i++) {
+  //   if (p->shmem[i]) { // active shared memory
+  //     LOG_DEBUG("free shared mem");
+  //     uvmunmap(p->pagetable, (uint64)p->shmem_map_start[i], p->shmem[i]->page_cnt, FALSE);
+  //     // debugcore("free page = %d", get_free_page_count());
+  //     drop_shared_mem(p->shmem[i]);
+  //     p->shmem[i] = NULL;
+  //     p->shmem_map_start[i] = 0;
+  //     // LOG_DEBUG("free page = %d", get_free_page_count());
+  //   }
+  // }
+
+  free_user_mem_and_pagetables(p->pagetable, p->total_size);
+  p->pagetable = NULL;
+  p->total_size = 0;
+}
+
+
 struct proc *allocproc(void)
 {
   struct proc *p;
@@ -122,13 +149,51 @@ found:
   return p;
 }
 
+/**
+ * clean a process struct
+ * The only useful action is "p->state = UNUSED"
+ * the others are just for safety
+ * should hold p->lock
+ */
+void freeproc(struct proc *p) {
+  ASSERT(holding(&p->lock), "should lock the process to free");
+
+  ASSERT(p->trapframe == NULL, "p->trapfram is pointing somewhere, did you forget to free trapframe?");
+  ASSERT(p->pagetable == NULL, "p->pagetable is pointing somewhere, did you forget to free pagetable?");
+  ASSERT(p->cwd == NULL, "p->cwd is not NULL, did you forget to release the inode?");
+  ASSERT(p->waiting_target == NULL, "p->cwd is waiting something");
+  ASSERT(p->total_size == 0, "memory not freed");
+  ASSERT(p->heap_sz == 0, "heap not freed");
+
+  p->state = UNUSED; // very important
+  p->pid = 0;
+  p->killed = FALSE;
+  p->parent = NULL;
+  p->exit_code = 0;
+  p->ustack = 0;
+  p->kstack = 0;
+  memset(&p->context, 0, sizeof(p->context));
+  p->stride = 0;
+  p->priority = 0;
+  // p->cpu_time = 0;
+  // p->last_start_time = 0;
+  for (int i = 0; i < FD_MAX; i++) {
+    ASSERT(p->ofiles[i] == NULL, "some file is not closed");
+  }
+  memset(p->name, 0, PROC_NAME_MAX);
+
+  // now everything should be clean
+  // still holding the lock
+}
+
+
 // Atomically release lock and sleep on chan.
 // Reacquires lock when awakened.
 void sleep(void *waiting_target, struct spinlock *lk) {
 
   struct proc *p = curr_proc();
 
-  // tracecore("sleep");
+  LOG_TRACE("sleep");
   // Must acquire p->lock in order to
   // change p->state and then call switch_to_scheduler.
   // Once we hold p->lock, we can be
@@ -196,4 +261,56 @@ void switch_to_scheduler(void) {
   uint64_t new_sp = r_sp();
   // LOG_DEBUG("in switch_to_scheduler after swtch");
   mycpu()->prev_intr_status = prev_intr_status;
+}
+
+
+/**
+ * Allocate a file descriptor of this process for the given file
+ */
+int fdalloc(struct file *f) {
+  struct proc *p = curr_proc();
+
+  for (int i = 0; i < FD_MAX; ++i) {
+    if (p->ofiles[i] == 0) {
+      p->ofiles[i] = f;
+      return i;
+    }
+  }
+  return -1;
+}
+
+
+
+// get the given process and its child processes running time in ticks
+// include kernel time and user time
+int get_cpu_time(struct proc *p, struct tms *tms) {
+  if (p == NULL) {
+   LOG_INFO("get_cpu_time: p is NULL");
+   return -1;
+  }
+  if (tms == NULL) {
+    LOG_INFO("get_cpu_time: tms is NULL");
+    return -1;
+  }
+
+  tms->tms_utime = p->user_time;
+  tms->tms_stime = p->kernel_time;
+  tms->tms_cutime = 0;
+  tms->tms_cstime = 0;
+
+  acquire_spinlock(&pool_lock);
+  struct proc *child;
+  for (child = pool; child < &pool[NPROC]; child++) {
+    if (child != p) {// avoid deadlock
+      acquire_spinlock(&child->lock);
+      if (child->state != UNUSED && child->parent == p) {
+        // found a child
+        tms->tms_cutime += child->user_time;
+        tms->tms_cstime += child->kernel_time;
+      }
+      release_spinlock(&child->lock);
+    }
+  }
+  release_spinlock(&pool_lock);
+  return 0;
 }
