@@ -123,6 +123,20 @@ pid_t sys_getppid()
 //   return 0;
 // }
 
+char * sys_getcwd(char *buf, size_t size) {
+
+  char buf[128];
+
+  int max = 128 < size ? 128 : size;
+  if ((size = namepath(myproc()->cwd, buf, max)) < 0)
+    return -1;
+
+  if (copyout2(addr, buf, max) < 0)
+    return -1;
+
+  return size;
+}
+
 int sys_chdir(char *path_va) {
   char path[128];
   struct inode *ip;

@@ -4,6 +4,8 @@
 #include "common/defs.h"
 #include "fs/fstat.h"
 
+char *sys_getcwd(char *buf, size_t size);
+
 int sys_fstat(int fd, struct kstat *statbuf_va);
 
 int sys_execv(char *pathname_va, char *argv_va[]);

@@ -109,6 +109,9 @@ void syscall()
     LOG_TRACE("syscall %d (%s) args:%p %p %p %p %p %p %p", (int)id, name, args[0], args[1], args[2], args[3], args[4], args[5], args[6]);
   }
   switch (id) {
+  case SYS_getcwd:
+    ret = (uint64_t)sys_getcwd((char *)args[0], args[1]);
+    break;
   case SYS_write:
     ret = sys_write(args[0], (void *)args[1], args[2]);
     break;
