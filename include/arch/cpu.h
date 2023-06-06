@@ -1,11 +1,8 @@
-#if !defined(CPU_H)
+#ifndef CPU_H
 #define CPU_H
 
 #include "common/defs.h"
-
-#ifndef NCPU
-#define NCPU (1)  // TODO: support multicore
-#endif // NCPU
+#include "arch/hw.h"
 
 extern volatile int booted[NCPU];
 extern volatile int halted[NCPU];
@@ -35,7 +32,7 @@ struct cpu {
   struct proc *proc;      // The process running on this cpu, or null.
   struct context prev_context; // swtch() here to enter scheduler().
   uint32_t intr_disable_depth;   // Depth of push_off() nesting.
-  uint64_t prev_intr_status;  // Were interrupts enabled before push_off()?      
+  uint64_t prev_intr_status;  // Were interrupts enabled before push_off()?
 };
 
 // debug print

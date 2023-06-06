@@ -3,6 +3,9 @@
 #include "mm/pmallocator.h"
 #include "lock/spinlock.h"
 #include "fs/virtio_blk.h"
+#include "fs/vfs.h"
+
+extern struct blk_ops blk_op_table[];
 
 buf_list_t blk_buf_list;
 
@@ -92,22 +95,28 @@ buf_t *buffer_fetch(uint32_t dev_id, uint64_t sector, buf_list_t *buf_list)
 
   if(!target) {
     target = buffer_alloc(buf_list);
+    target->sector = sector;
     target->read_pending = 1;
-
     release_spinlock(&buf_list->buffer_lock);
-    virtio_blk_rw(sector, target, 0); // will request a read and sleep;
+    acquire_sleeplock(&target->lock);
 
+    blk_op_table[dev_id].rw(target, 0); // will request a read and sleep;
+
+    release_sleeplock(&target->lock);
     acquire_spinlock(&buf_list->buffer_lock);
-
     target->dirty = 0;
     target->vaild = 1;
+    target->read_pending = 0;
     buffer_hash_insert(target, &buf_list->hash);
   }
+
+  while (target->read_pending = 1)
+    ;
 
   buffer_lru_top(target, buf_list);
 
   release_spinlock(&buf_list->buffer_lock);
-
+  acquire_sleeplock(&target->lock);
   return target;
 }
 
@@ -121,8 +130,13 @@ buf_t *buffer_alloc(buf_list_t *buf_list)
   return buf;
 }
 
+void buffer_release(buf_t *buf) {
+  release_sleeplock(&buf->lock);
+}
+
 void buffer_evict(buf_t *buf, buf_list_t *buf_list)
 {
+  acquire_sleeplock(&buf->lock);
   if(buf->vaild != 1)
     PANIC("attempt to evict a unvaild buffer");
 
@@ -131,6 +145,7 @@ void buffer_evict(buf_t *buf, buf_list_t *buf_list)
   buffer_hash_delete(buf, &buf_list->hash);
 
   buf->vaild = 0;
+  release_sleeplock(&buf->lock);
 }
 
 void buffer_lru_top(buf_t *buf, buf_list_t *buf_list)
@@ -151,7 +166,7 @@ void buffer_lru_top(buf_t *buf, buf_list_t *buf_list)
 
 void buffer_flush(buf_t *buf)
 {
-  virtio_blk_rw(buf->sector, buf, 1);
+  blk_op_table[buf->dev_id].rw(buf, 1);
 }
 
 void buffer_list_flush(buf_list_t *buf_list)

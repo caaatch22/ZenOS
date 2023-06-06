@@ -9,6 +9,8 @@
 extern struct super_block rootfs;
 extern struct dentry_op rootfs_dentry_op;
 
+struct blk_ops blk_op_table[MAX_DEV_NUM];
+
 static struct dentry *de_check_cache(struct dentry *parent, char *name);
 int de_delete(struct dentry *de);
 
@@ -577,7 +579,7 @@ int namepath(struct inode *ip, char *path, uint32_t max)
  */
 
 extern struct super_block *dev_fs_init(struct inode *dev);
-extern void image_fs_uninstall(struct super_block *sb);
+extern void fs_uninstall(struct super_block *sb);
 
 uint32_t get_number_dev(struct unique_number *un)
 {
@@ -713,7 +715,7 @@ int do_umount(struct inode *mntpoint, uint32_t flag)
 	sb_prnt->next = sb->next;
 	release_spinlock(&rootfs.cache_lock);
 
-	image_fs_uninstall(sb);
+	fs_uninstall(sb);
 
 	return 0;
 }

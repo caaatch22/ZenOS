@@ -5,13 +5,23 @@
 #include "fs/fstat.h"
 #include "lock/sleeplock.h"
 #include "lock/spinlock.h"
+#include "fs/buffer.h"
 
 #define MAX_DEV_TYPE 16
 #define MAX_DEV_NUM 32
 #define MAX_NAME_SIZE 255
 
+#define RAMDISK_ID 1
 
-struct unique_number {
+struct dirent;
+struct kstat;
+
+struct blk_ops {
+	void (*rw)(buf_t *, uint32_t);
+};
+
+struct unique_number
+{
 	struct spinlock lock;
 	uint32_t number;
 	uint32_t (*get_number)(struct unique_number *un);
@@ -51,11 +61,9 @@ struct dentry_op {
 };
 
 struct file_op {
-	// --read: off,在文件中偏移量；n,读取的大小
-	int (*read)(struct inode *ip, int usr, uint64_t dst, uint32_t off, uint32_t n);
-	int (*write)(struct inode *ip, int usr, uint64_t src, uint32_t off, uint32_t n);
-	// read dentry from a directory
-	int (*readdir)(struct inode *ip, struct dirent *dent, uint32_t off);
+	int (*read)(struct inode *ip, uint32_t usr, uint64_t dst, uint32_t off, uint32_t n);
+	int (*write)(struct inode *ip, uint32_t usr, uint64_t src, uint32_t off, uint32_t n);
+	int (*readdir)(struct super_block *, struct inode *ip, struct dirent *dent, uint32_t off);
 };
 
 

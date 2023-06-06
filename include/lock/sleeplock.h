@@ -16,5 +16,6 @@ typedef struct sleeplock {
 void init_sleeplock(sleeplock_t *, char *);
 void acquire_sleeplock(sleeplock_t *);
 void release_sleeplock(sleeplock_t *);
+int holdingsleep(struct sleeplock *);
 
 #endif

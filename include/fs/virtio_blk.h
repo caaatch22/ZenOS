@@ -93,6 +93,6 @@ typedef struct virtio_blk_dev {
 } __attribute__ ((aligned (PAGE_SIZE))) virtio_blk_dev_t;
 
 void virtio_blk_init(void);
-void virtio_blk_rw(uint64_t, buf_t *, uint8_t);
+void virtio_blk_rw(buf_t *, uint32_t);
 
 #endif
