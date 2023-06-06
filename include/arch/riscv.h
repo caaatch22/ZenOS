@@ -173,11 +173,11 @@ static inline void w_pmpcfg0(uint64_t x)
 
 // Supervisor Status Register, sstatus
 
-#define SSTATUS_UIE (1 << 0) // User Interrupt Enable
-#define SSTATUS_SIE (1 << 1) // Supervisor Interrupt Enable
-#define SSTATUS_UPIE (1 << 4) // User Previous Interrupt Enable
-#define SSTATUS_SPIE (1 << 5) // Supervisor Previous Interrupt Enable
-#define SSTATUS_SPP (1 << 8) // Previous mode, 1=Supervisor, 0=User
+#define SSTATUS_UIE (1L << 0) // User Interrupt Enable
+#define SSTATUS_SIE (1L << 1) // Supervisor Interrupt Enable
+#define SSTATUS_UPIE (1L << 4) // User Previous Interrupt Enable
+#define SSTATUS_SPIE (1L << 5) // Supervisor Previous Interrupt Enable
+#define SSTATUS_SPP (1L << 8) // Previous mode, 1=Supervisor, 0=User
 
 static inline uint64_t r_stvec()
 {
@@ -350,6 +350,11 @@ static inline void intr_enable() { w_sstatus(r_sstatus() | SSTATUS_SIE); }
 // disable device interrupts
 static inline void intr_disable() { w_sstatus(r_sstatus() & ~SSTATUS_SIE); }
 
+// are device interrupts enabled?
+static inline int intr_get() {
+  uint64_t x = r_sstatus();
+  return (x & SSTATUS_SIE) != 0;
+}
 
 static inline uint64_t r_sp() {
   uint64_t x;

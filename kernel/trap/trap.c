@@ -17,13 +17,13 @@ void trapinit() { }
 
 // set up to take exceptions and traps while in the kernel.
 void set_usertrap(void) {
-  // intr_off();  // TODO: enable instr mechanism
+  intr_disable();
   w_stvec(((uint64_t)TRAPFORWARD + (uservec - trapforward)) & ~0x3); // DIRECT
 }
 
 void set_kerneltrap(void) {
   w_stvec((uint64_t)kernelvec & ~0x3); // DIRECT
-  // intr_on();  // // TODO: enable instr mechanism
+  intr_enable();
 }
 
 void kernel_interrupt_handler(uint64_t scause, uint64_t stval, uint64_t sepc) {
@@ -48,8 +48,8 @@ void user_exception_handler(uint64_t scause, uint64_t stval, uint64_t sepc) {
   struct trapframe *trapframe = p->trapframe;
   switch (scause & 0xff) {
   case UserEnvCall:
-    if (p->killed)
-      exit(-1);
+    // if (p->killed)
+    //   exit(-1);
     trapframe->epc += 4;
     intr_enable();
     syscall();
@@ -115,14 +115,14 @@ void usertrap() {
   uint64_t scause = r_scause();
   uint64_t stval = r_stval();
 
-  // ASSERT(!intr_get(), "");
+  ASSERT(!intr_get(), "");
   // debugcore("Enter user trap handler scause=%p", scause);
 
   w_stvec((uint64_t)kernelvec & ~0x3); // DIRECT
   // debugcore("usertrap");
   // print_cpu(mycpu());
 
-  // ASSERT((sstatus & SSTATUS_SPP) == 0, "usertrap: not from user mode");
+  ASSERT((sstatus & SSTATUS_SPP) == 0, "usertrap: not from user mode");
 
   if (scause & (1ULL << 63)) { // interrput = 1
     user_interrupt_handler(scause, stval, sepc);
