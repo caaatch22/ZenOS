@@ -51,7 +51,7 @@ struct proc {
   uint64_t priority;
 //   uint64_t cpu_time;          // ms, user and kernel
 //   uint64_t last_start_time;   // ms
-  struct file *ofile[FD_MAX]; // Opened files
+  struct file *ofiles[FD_MAX]; // Opened files
   struct inode *cwd;          // Current directory
   struct inode *elf;          //self-file
   //   struct shared_mem *shmem[MAX_PROC_SHARED_MEM_INSTANCE];
@@ -80,8 +80,16 @@ void forkret(void);
 
 void proc_free_mem_and_pagetable(struct proc* p);
 struct proc *allocproc(void);
-struct file *get_proc_file_by_fd(struct proc *p, int fd);
+int fdalloc(struct file *f);
+// struct file *get_proc_file_by_fd(struct proc *p, int fd);
 pagetable_t proc_pagetable(struct proc *p);
 void freeproc(struct proc *p);
+
+
+// exit.c
+void exit(int code);
+
+// yield.c
+void yield();
 
 #endif // PROC_H

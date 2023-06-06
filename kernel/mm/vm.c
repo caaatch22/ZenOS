@@ -37,6 +37,17 @@ uint64_t *pte_fetch(pagetable_t pt, uint64_t va) //do not gaurd the given pte to
   return pte;
 }
 
+
+// Look up a virtual address, return the physical address
+uint64_t va2pa(pagetable_t pagetable, uint64_t va)
+{
+  uint64_t *pte = pte_fetch(pagetable, va);
+  // should consider what is pte_fetch fail
+  uint64_t pa = PTE2PA_PPN(*pte);
+
+  return pa | (va & 0xFFFULL);
+}
+
 void va_page_bind(pagetable_t pt, uint64_t va, uint64_t pa, uint64_t PTE_PERM)
 {
   if(PTE_PERM & (~(PTE_R|PTE_W|PTE_X)))
@@ -200,7 +211,7 @@ create_empty_pagetable()
 // Copy from kernel to user.
 // Copy len bytes from src to virtual address dstva in a given page table.
 // Return 0 on success, -1 on error.
-int copyout_impl(pagetable_t pagetable, uint64_t dstva, char *src, uint64_t len) {
+int copyout(pagetable_t pagetable, uint64_t dstva, char *src, uint64_t len) {
   uint64_t n, va0, pa0;
 
   while (len > 0) {
@@ -224,7 +235,7 @@ int copyout_impl(pagetable_t pagetable, uint64_t dstva, char *src, uint64_t len)
 // Copy from user to kernel.
 // Copy len bytes to dst from virtual address srcva in a given page table.
 // Return 0 on success, -1 on error.
-int copyin_impl(pagetable_t pagetable, char *dst, uint64_t srcva, uint64_t len) {
+int copyin(pagetable_t pagetable, char *dst, uint64_t srcva, uint64_t len) {
   uint64_t n, va0, pa0;
 
   while (len > 0) {
@@ -245,10 +256,56 @@ int copyin_impl(pagetable_t pagetable, char *dst, uint64_t srcva, uint64_t len) 
   return 0;
 }
 
-int copyin(char *dst, uint64_t srcva, uint64_t len) {
-  return copyin_impl(curr_proc()->pagetable, dst, srcva, len);
+int copyin2(char *dst, uint64_t srcva, uint64_t len) {
+  return copyin(curr_proc()->pagetable, dst, srcva, len);
 }
 
-int copyout(uint64_t dstva, char *src, uint64_t len) {
-  return copyout_impl(curr_proc()->pagetable, dstva, src, len);
+int copyout2(uint64_t dstva, char *src, uint64_t len) {
+  return copyout(curr_proc()->pagetable, dstva, src, len);
+}
+
+
+// Copy a null-terminated string from user to kernel.
+// Copy bytes to dst from virtual address srcva in a given page table,
+// until a '\0', or max.
+// Return 0 on success, -1 on error.
+int copyinstr(pagetable_t pagetable, char *dst, uint64_t srcva, uint64_t max) {
+  uint64_t n, va0, pa0;
+  int got_null = 0;
+
+  while (got_null == 0 && max > 0) {
+    va0 = PAGE_ROUNDDOWN(srcva);
+    pa0 = PTE2PA_PPN(*pte_fetch(pagetable, va0));
+    pa0 = walkaddr(pagetable, va0);
+    if (pa0 == 0) {
+      LOG_DEBUG("bad addr");
+      return -1;
+    }
+    n = PAGE_SIZE - (srcva - va0);
+    if (n > max)
+      n = max;
+
+    char *p = (char *)(pa0 + (srcva - va0));
+    while (n > 0) {
+      if (*p == '\0') {
+        *dst = '\0';
+        got_null = 1;
+        break;
+      } else {
+        *dst = *p;
+      }
+      --n;
+      --max;
+      p++;
+      dst++;
+    }
+
+    srcva = va0 + PAGE_SIZE;
+  }
+  if (got_null) {
+    return 0;
+  } else {
+    LOG_DEBUG("no null");
+    return -1;
+  }
 }

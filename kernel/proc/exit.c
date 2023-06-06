@@ -1,13 +1,14 @@
 #include "proc/proc.h"
 #include "common/common.h"
+#include "fs/file.h"
 #include "fs/vfs.h"
 
 static void close_proc_files(struct proc *p)
 {
   for (int i = 0; i < FD_MAX; ++i) {
-    if (p->files[i] != NULL) {
-        fileclose(p->files[i]);
-        p->files[i] = NULL;
+    if (p->ofiles[i] != NULL) {
+      fileclose(p->ofiles[i]);
+      p->ofiles[i] = NULL;
     }
   }
 }

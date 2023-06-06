@@ -178,7 +178,7 @@ void freeproc(struct proc *p) {
   // p->cpu_time = 0;
   // p->last_start_time = 0;
   for (int i = 0; i < FD_MAX; i++) {
-    ASSERT(p->files[i] == NULL, "some file is not closed");
+    ASSERT(p->ofiles[i] == NULL, "some file is not closed");
   }
   memset(p->name, 0, PROC_NAME_MAX);
 
@@ -261,4 +261,20 @@ void switch_to_scheduler(void) {
   uint64_t new_sp = r_sp();
   // LOG_DEBUG("in switch_to_scheduler after swtch");
   mycpu()->prev_intr_status = prev_intr_status;
+}
+
+
+/**
+ * Allocate a file descriptor of this process for the given file
+ */
+int fdalloc(struct file *f) {
+  struct proc *p = curr_proc();
+
+  for (int i = 0; i < FD_MAX; ++i) {
+    if (p->ofiles[i] == 0) {
+      p->ofiles[i] = f;
+      return i;
+    }
+  }
+  return -1;
 }

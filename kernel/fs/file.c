@@ -4,6 +4,7 @@
 #include "proc/proc.h"
 #include "mm/kmalloc.h"
 #include "utils/string.h"
+#include "fs/pipe.h"
 // Allocate a file structure.
 
 struct devsw devsw[MAX_DEV_NUM];
@@ -226,7 +227,7 @@ int filewritev(struct file *f, struct iovec ioarr[], int count)
 
 struct file *fd2file(int fd)
 {
-  return curr_proc()->ofile[fd];
+  return curr_proc()->ofiles[fd];
 }
 
 

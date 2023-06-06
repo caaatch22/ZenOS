@@ -2,8 +2,9 @@
 #define SYSCALL_IMPL_H
 
 #include "common/defs.h"
+#include "fs/fstat.h"
 
-struct stat;
+int sys_fstat(int fd, struct kstat *statbuf_va);
 
 int sys_execv(char *pathname_va, char *argv_va[]);
 
@@ -38,8 +39,6 @@ uint64_t sys_time_ms();
 int sys_sleep(unsigned long long time_in_ms);
 
 int sys_pipe(int (*pipefd_va)[2]);
-
-int sys_fstat(int fd, struct stat *statbuf_va);
 
 int sys_chdir(char *path_va);
 
