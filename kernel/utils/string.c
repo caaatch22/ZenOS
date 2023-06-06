@@ -114,3 +114,12 @@ void snstr(char *dst, wchar const *src, int len) {
   while(len-- > 0)
     *dst++ = 0;
 }
+
+char* strcat(char *s, const char *t) {
+  char *os = s;
+  while (*s)
+    s++;
+  while ((*s++ = *t++) != 0)
+    ;
+  return os;
+}

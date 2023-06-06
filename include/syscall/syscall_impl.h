@@ -4,6 +4,8 @@
 #include "common/defs.h"
 #include "fs/fstat.h"
 
+int sys_getcwd(char *ubuf, size_t size);
+
 int sys_fstat(int fd, struct kstat *statbuf_va);
 
 int sys_execv(char *pathname_va, char *argv_va[]);
@@ -20,11 +22,21 @@ pid_t sys_getppid();
 
 int sys_open(char *pathname_va, int flags);
 
+int sys_openat(int fd, char *filename, int flags, int mode);
+
 int sys_mknod( char *pathname_va, short major, short minor);
 
 int sys_dup(int oldfd);
 
+int sys_dup3(int oldfd, int newfd, int flags);
+
 int sys_sched_yield(void);
+
+int sys_linkat(int olddirfd, char *oldpath, int newdirfd, char *newpath, int flags);
+
+int sys_unlinkat(int dirfd, char *pathname, int flags);
+
+int sys_mkdirat(int dirfd, char *path_va, int mode);
 
 pid_t sys_waitpid(pid_t pid, int *wstatus_va);
 
@@ -44,7 +56,7 @@ int sys_pipe(int (*pipefd_va)[2]);
 
 int sys_chdir(char *path_va);
 
-int sys_link(char *oldpath_va,  char *newpath_va);
+int sys_link(char *oldpath_va, char *newpath_va);
 
 int sys_unlink( char *pathname_va);
 

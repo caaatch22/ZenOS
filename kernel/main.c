@@ -9,6 +9,7 @@
 #include "logo.h"
 #include "fs/virtio_blk.h"
 #include "mm/kmalloc.h"
+#include "proc/scheduler.h"
 
 extern char bss[];
 extern char ebss[];
@@ -46,9 +47,8 @@ void main(uint64_t mhartid, uint64_t dtb_address)
     // PANIC("test");
 
     virtio_blk_init();
-    rootfs_init();
 
-    //fs_test();
+    // fs_test();
 
     shutdown();
   }

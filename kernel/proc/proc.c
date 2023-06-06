@@ -289,7 +289,21 @@ int fdalloc(struct file *f) {
   return -1;
 }
 
+int fdalloc2(struct file *f, int fd) {
+  struct proc *p = curr_proc();
 
+  if (fd < 0 || fd >= FD_MAX) {
+    return -1;
+  }
+  if (p->ofiles[fd] != 0) {
+    LOG_INFO("p->ofiles[fd] != 0");
+    // TODO: do we need it?
+    // fileclose(p->ofiles[fd]);
+    return -1;
+  }
+  p->ofiles[fd] = f;
+  return fd;
+}
 
 // get the given process and its child processes running time in ticks
 // include kernel time and user time

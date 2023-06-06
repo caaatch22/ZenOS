@@ -8,6 +8,8 @@
 #include "fs/pipe.h"
 #include "fs/vfs.h"
 #include "proc/proc.h"
+#include "fs/fcntl.h"
+#include "utils/string.h"
 
 #define min(a, b) (a) < (b) ? (a) : (b);
 
@@ -107,10 +109,10 @@ pid_t sys_getppid()
 //  */
 // int sys_mkdir(char *path_va) {
 //   struct proc *p = curr_proc();
-//   char path[MAXPATH];
+//   char path[MAX_NAME_SIZE];
 //   struct inode *ip;
 
-//   if (copyinstr(p->pagetable, path, (uint64_t)path_va, MAXPATH) != 0) {
+//   if (copyinstr(p->pagetable, path, (uint64_t)path_va, MAX_NAME_SIZE) != 0) {
 //     return -2;
 //   }
 //   ip = create(path, T_DIR, 0, 0);
@@ -123,11 +125,25 @@ pid_t sys_getppid()
 //   return 0;
 // }
 
+int sys_getcwd(char *ubuf, size_t size) {
+
+  char buf[128];
+
+  int max = 128 < size ? 128 : size;
+  if ((size = namepath(curr_proc()->cwd, buf, max)) < 0)
+    return -1;
+
+  if (copyout2((uint64_t)ubuf, buf, max) < 0)
+    return -1;
+
+  return size;
+}
+
 int sys_chdir(char *path_va) {
   char path[128];
   struct inode *ip;
   struct proc *p = curr_proc();
-  // 128 MAXPATH 
+  // 128 MAX_NAME_SIZE 
   if (copyinstr(p->pagetable, path, (uint64_t)path_va, 128) != 0) {
     return -2;
   }
@@ -150,9 +166,9 @@ int sys_chdir(char *path_va) {
 // int sys_mknod(char *path_va, short major, short minor) {
 //     struct proc *p = curr_proc();
 //     struct inode *ip;
-//     char path[MAXPATH];
+//     char path[MAX_NAME_SIZE];
 
-//     if (copyinstr(p->pagetable, path, (uint64_t)path_va, MAXPATH) != 0) {
+//     if (copyinstr(p->pagetable, path, (uint64_t)path_va, MAX_NAME_SIZE) != 0) {
 //         debugcore("can not copyinstr");
 //         return -1;
 //     }
@@ -170,9 +186,9 @@ int sys_chdir(char *path_va) {
 
 // int sys_execv( char *pathname_va, char * argv_va[]) {
 //     struct proc *p = curr_proc();
-//     char name[MAXPATH];
+//     char name[MAX_NAME_SIZE];
 //     char argv_str[MAX_EXEC_ARG_COUNT][MAX_EXEC_ARG_LENGTH];
-//     copyinstr(p->pagetable, name, (uint64_t)pathname_va, MAXPATH);
+//     copyinstr(p->pagetable, name, (uint64_t)pathname_va, MAX_NAME_SIZE);
 //     infof("sys_exec %s", name);
 
 //     int argc = 0;
@@ -270,14 +286,22 @@ int sys_close(int fd) {
   return 0;
 }
 
-// int sys_open(char *pathname_va, int flags){
-//   LOG_DEBUG("sys_open");
-//   struct proc *p = curr_proc();
-//   char path[MAXPATH];
-//   copyinstr(p->pagetable, path, (uint64_t)pathname_va, MAXPATH);
-//   return fileopen(path, flags);
-// }
+int sys_open(char *pathname_va, int flags){
+  LOG_DEBUG("sys_open");
+  struct proc *p = curr_proc();
+  char path[MAX_NAME_SIZE];
+  copyinstr(p->pagetable, path, (uint64_t)pathname_va, MAX_NAME_SIZE);
+  return fileopen(path, flags);
+}
 
+int sys_openat(int fd, char *filename, int flags, int mode) {
+  // dont support mode now
+  LOG_DEBUG("sys_openat");
+  struct proc *p = curr_proc();
+  char path[MAX_NAME_SIZE];
+  copyinstr(p->pagetable, path, (uint64_t)filename, MAX_NAME_SIZE);
+  return fileopenat(fd, path, flags, mode);
+}
 
 // int64 sys_mmap(void *start, uint64_t len, int prot) {
 //     if (len == 0)
@@ -403,16 +427,134 @@ int sys_dup(int oldfd) {
   return fd;
 }
 
+int sys_dup3(int oldfd, int newfd, int flags) {
+  if (flags != 0) {
+    LOG_INFO("sys_dup3: flags must be 0");
+    return -1;
+  }
+
+  struct file *f;
+  int fd;
+  struct proc *p = curr_proc();
+  f = p->ofiles[oldfd];
+
+  if (f == NULL) {
+    LOG_INFO("old fd is not valid");
+    // print_proc(p);
+    return -1;
+  }
+
+  if (newfd == oldfd) {
+    // do nothing
+    // ref: https://linux.die.net/man/2/dup3
+    return newfd;
+  }
+
+  // try close new fd
+  sys_close(newfd);
+
+  if ((fd = fdalloc2(f, newfd)) < 0) {
+    LOG_INFO("cannot allocate new fd");
+    return -1;
+  }
+  filedup(f);
+  return fd;
+}
+
+int sys_linkat(int olddirfd, char *oldpath, int newdirfd, char *newpath, int flags) {
+  LOG_DEBUG("sys_linkat");
+  if (flags != 0) {
+    LOG_INFO("sys_linkat: flags=%d not support", flags);
+    return -1;
+  }
+  struct proc *p = curr_proc();
+  char old[MAX_NAME_SIZE];
+  char new[MAX_NAME_SIZE];
+  copyinstr(p->pagetable, old, (uint64_t)oldpath, MAX_NAME_SIZE);
+  copyinstr(p->pagetable, new, (uint64_t)newpath, MAX_NAME_SIZE);
+
+  int oldfd = -1, newfd = -1, ret;
+  oldfd = fileopenat(olddirfd, old, O_RDONLY, 0);
+  if (oldfd < 0) {
+    LOG_INFO("sys_linkat: open old %s failed", old);
+    ret = -1;
+    goto end;
+  }
+  newfd = fileopenat(newdirfd, new, O_WRONLY | O_CREAT, 0);
+  if (newfd < 0) {
+    LOG_INFO("sys_linkat: open new %s failed", new);
+    ret = -1;
+    goto end;
+  }
+
+  struct file *file_old = p->ofiles[oldfd];
+  struct file *file_new = p->ofiles[newfd];
+
+  ASSERT(file_old != NULL && file_new != NULL, "sys_linkat: file is NULL, data is corrupted");
+
+  ret = filelink(file_old, file_new);
+
+end:
+  if (oldfd >= 0) {
+    sys_close(oldfd);
+  }
+  if (newfd >= 0) {
+    sys_close(newfd);
+  }
+  return ret;
+}
+
+// useless flags, only deal with fd is a file 
+int sys_unlinkat(int dirfd, char *pathname, int flags) {
+  LOG_DEBUG("sys_unlinkat");
+
+  struct proc *p = curr_proc();
+  char path[MAX_NAME_SIZE];
+  copyinstr(p->pagetable, path, (uint64_t)pathname, MAX_NAME_SIZE);
+
+  int fd = fileopenat(dirfd, path, O_RDONLY, 0);
+  if (fd < 0) {
+    LOG_INFO("sys_unlinkat: open %s failed", path);
+    return -1;
+  }
+  struct file* f = p->ofiles[fd];
+  ASSERT(f != NULL, "sys_unlinkat: file is NULL, data is corrupted");
+  struct inode *ip = f->ip;
+  ilock(ip);
+  int ret = unlink(ip);
+  iunlockput(ip);
+
+  sys_close(fd);
+  return ret;
+}
+
+// mode is ignored
+int sys_mkdirat(int dirfd, char *path_va, int mode)
+{
+  char path[MAX_NAME_SIZE];
+  copyinstr(curr_proc()->pagetable, path, (uint64_t)path_va, MAX_NAME_SIZE);
+
+  struct file *f = curr_proc()->ofiles[dirfd];
+
+  struct inode *dp = NULL, *ip;
+
+	if ((ip = create(path, T_DIR, dp)) == NULL) {
+		return -1;
+	}
+	iunlockput(ip);
+	return 0;
+}
+
 // // Create the path new as a link to the same inode as old.
 // int sys_link(char *oldpath_va, char *newpath_va) {
-//   char name[DIRSIZ], new[MAXPATH], old[MAXPATH];
+//   char name[DIRSIZ], new[MAX_NAME_SIZE], old[MAX_NAME_SIZE];
 //   struct inode *dp, *ip;
 
 //   struct proc *p = curr_proc();
-//   if (copyinstr(p->pagetable, old, (uint64_t)oldpath_va, MAXPATH) != 0) {
+//   if (copyinstr(p->pagetable, old, (uint64_t)oldpath_va, MAX_NAME_SIZE) != 0) {
 //     return -1;
 //   }
-//   if (copyinstr(p->pagetable, new, (uint64_t)newpath_va, MAXPATH) != 0) {
+//   if (copyinstr(p->pagetable, new, (uint64_t)newpath_va, MAX_NAME_SIZE) != 0) {
 //     return -1;
 //   }
 
