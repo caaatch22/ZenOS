@@ -112,7 +112,7 @@ uint32_t alloc3_desc(uint32_t *idx)
   return 0;
 }
 
-void virtio_disk_rw(buf_t *buf, uint32_t write)
+void virtio_blk_rw(buf_t *buf, uint32_t write)
 {
   uint64_t sector = buf->sector;
 
