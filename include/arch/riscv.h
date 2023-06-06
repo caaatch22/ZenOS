@@ -327,23 +327,13 @@ static inline void w_sstatus(uint64_t x)
       :
       : "r"(x));
 }
-/*don't use it
-static inline void intr_disable()
-{
-  uint64_t sstatus_scratch;
-  sstatus_scratch = r_sstatus();
-  sstatus_scratch &= ~MSTATUS_SIE;
-  w_sstatus(sstatus_scratch);
-}
 
-static inline void intr_enable()
-{
-  uint64_t sstatus_scratch;
-  sstatus_scratch = r_sstatus();
-  sstatus_scratch |= ~MSTATUS_SIE;
-  w_sstatus(sstatus_scratch);
-}
-*/
+// enable device interrupts
+static inline void intr_enable() { w_sstatus(r_sstatus() | SSTATUS_SIE); }
+
+// disable device interrupts
+static inline void intr_disable() { w_sstatus(r_sstatus() & ~SSTATUS_SIE); }
+
 
 static inline uint64_t r_sp() {
   uint64_t x;

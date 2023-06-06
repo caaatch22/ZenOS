@@ -32,10 +32,26 @@ void va_page_bind(pagetable_t pt, uint64_t va, uint64_t pa, uint64_t PTE_PERM);
 
 void va_page_bind_range(pagetable_t pt, uint64_t va, uint64_t pa, uint64_t size, uint64_t PTE_PERM);
 
+void va_page_unbind(pagetable_t pt, uint64_t va, int do_free);
+
+void va_page_unbind_range(pagetable_t pt, uint64_t va, uint64_t npages, int do_free);
+
 void kernel_vmenable();
 
 void kernel_vminit();
 
+void free_user_mem_and_pagetables(pagetable_t pagetable, uint64_t total_size);
+
+void free_pagetable_pages(pagetable_t pagetable);
+
 pagetable_t create_empty_pagetable();
+
+int copyin_impl(pagetable_t pagetable, char *dst, uint64_t srcva, uint64_t len);
+
+int copyout_impl(pagetable_t pagetable, uint64_t dstva, char *src, uint64_t len);
+
+int copyin(char *dst, uint64_t srcva, uint64_t len);
+
+int copyout(uint64_t dstva, char *src, uint64_t len);
 
 #endif

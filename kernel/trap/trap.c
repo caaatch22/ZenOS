@@ -49,9 +49,9 @@ void user_exception_handler(uint64_t scause, uint64_t stval, uint64_t sepc) {
   case UserEnvCall:
     // if (p->killed)
     //   exit(-1);
-    // trapframe->epc += 4;
-    // intr_on();
-    // syscall();
+    trapframe->epc += 4;
+    intr_enable();
+    syscall();
     break;
   case StoreAccessFault:
     // LOG_INFO("StoreAccessFault in user application: %p, stval = %p sepc = %p\n", scause, stval, sepc);

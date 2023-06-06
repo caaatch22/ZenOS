@@ -2,6 +2,8 @@
 #include "arch/riscv.h"
 #include "arch/hw.h"
 #include "mm/pmallocator.h"
+#include "proc/proc.h"
+#include "utils/string.h"
 
 pagetable_t kernel_pagetable;
 
@@ -73,9 +75,79 @@ void va_page_bind_range(pagetable_t pt, uint64_t va, uint64_t pa ,uint64_t size,
     PANIC("range bind error");
 }
 
-void va_page_unbind(pagetable_t pt, uint64_t va)
+void va_page_unbind(pagetable_t pt, uint64_t va, int do_free)
 {
+  uint64_t *pte = pte_fetch(pt, va);
 
+  if ((*pte & PTE_V) == 0)
+    PANIC("va not mapped in unbind page");
+
+  // #define PTE_FLAGS(pte) ((pte) &0x3FF)
+  // if (PTE_FLAGS(*pte) == PTE_V)
+  //   PANIC("not the third level pte");
+
+  if (do_free) {
+    uint64_t pa = PTE2PA_PPN(*pte);
+    pm_free((pm_page_node *)pa);
+  }
+  *pte = 0;
+}
+
+// Remove npages of mappings starting from va. va must be
+// page-aligned. The mappings must exist.
+// Optionally free the physical memory.
+void va_page_unbind_range(pagetable_t pt, uint64_t va, uint64_t npages, int do_free)
+{
+  uint64_t a;
+  LOG_DEBUG("va=%p npages=%d do_free=%d", va, npages, do_free);
+  if (!ALIGNED(va))
+    PANIC("page not aligned in unbind");
+
+  for (a = va; a < va + npages * PAGE_SIZE; a += PAGE_SIZE) {
+    va_page_unbind(pt, a, do_free);
+  }
+}
+
+
+// Recursively free page-table pages.
+// All leaf mappings must already have been removed.
+void free_pagetable_pages(pagetable_t pagetable)
+{
+  // there are 2^9 = 512 PTEs in a page table.
+  for (int i = 0; i < 512; i++) {
+    uint64_t pte = pagetable->page_entry[i];
+    if ((pte & PTE_V) && (pte & (PTE_R | PTE_W | PTE_X)) == 0) {
+      // this PTE points to a lower-level page table.
+      uint64_t child = PTE2PA_PPN(pte);
+      free_pagetable_pages((pagetable_t)child);
+      pagetable->page_entry[i] = 0;
+    } else if (pte & PTE_V) {
+      PANIC("free_pagetable_pages is containing a valid page");
+    }
+  }
+  pm_free((void *)pagetable);
+}
+
+// Free user memory pages,
+// then free page-table pages.
+// total_size used for checking
+void free_user_mem_and_pagetables(pagetable_t pagetable, uint64_t total_size)
+{
+  // free ustack
+  LOG_DEBUG("free_user_mem_and_pagetables free stack");
+  va_page_unbind_range(pagetable, USTACK_BOTTOM - USTACK_SIZE, USTACK_SIZE / PAGE_SIZE, TRUE);
+  total_size -= USTACK_SIZE;
+
+  // free bin
+  LOG_DEBUG("free_user_mem_and_pagetables free bin");
+
+  va_page_unbind_range(pagetable, UTEXT_START, PAGE_ROUNDUP(total_size) / PAGE_SIZE, TRUE);
+  total_size -= PAGE_ROUNDUP(total_size);
+
+  ASSERT(total_size == 0, "total_size != 0 after freed");
+
+  // free page-table pages
+  free_pagetable_pages(pagetable);
 }
 
 void kernel_vmenable()
@@ -105,9 +177,6 @@ void kernel_vminit()
   LOG_DEBUG("trampoline va=%p -> [%p, %p]", TRAPFORWARD, trapforward, trapforward + PAGE_SIZE);
   va_page_bind_range(kernel_pagetable, TRAPFORWARD, (uint64_t)trapforward, PAGE_SIZE, PTE_R | PTE_X);
 
-  // allocate and map a kernel stack for each process.
-  // proc_mapstacks(kernel_pagetable);
-
 }
 
 
@@ -124,4 +193,62 @@ create_empty_pagetable()
   //   memset(pagetable, 0, PGSIZE);
   // }
   return pagetable;
+}
+
+
+
+// Copy from kernel to user.
+// Copy len bytes from src to virtual address dstva in a given page table.
+// Return 0 on success, -1 on error.
+int copyout_impl(pagetable_t pagetable, uint64_t dstva, char *src, uint64_t len) {
+  uint64_t n, va0, pa0;
+
+  while (len > 0) {
+    va0 = PAGE_ROUNDDOWN(dstva);
+    uint64_t *pte = pte_fetch(pagetable, va0);
+    pa0 = PTE2PA_PPN(*pte);
+    if (pa0 == 0)
+      return -1;
+    n = PAGE_SIZE - (dstva - va0);
+    if (n > len)
+      n = len;
+    memmove((void *)(pa0 + (dstva - va0)), src, n);
+
+    len -= n;
+    src += n;
+    dstva = va0 + PAGE_SIZE;
+  }
+  return 0;
+}
+
+// Copy from user to kernel.
+// Copy len bytes to dst from virtual address srcva in a given page table.
+// Return 0 on success, -1 on error.
+int copyin_impl(pagetable_t pagetable, char *dst, uint64_t srcva, uint64_t len) {
+  uint64_t n, va0, pa0;
+
+  while (len > 0) {
+    va0 = PAGE_ROUNDDOWN(srcva);
+    uint64_t *pte = pte_fetch(pagetable, va0);
+    pa0 = PTE2PA_PPN(*pte);
+    if (pa0 == 0)
+      return -1;
+    n = PAGE_SIZE - (srcva - va0);
+    if (n > len)
+      n = len;
+    memmove(dst, (void *)(pa0 + (srcva - va0)), n);
+
+    len -= n;
+    dst += n;
+    srcva = va0 + PAGE_SIZE;
+  }
+  return 0;
+}
+
+int copyin(char *dst, uint64_t srcva, uint64_t len) {
+  return copyin_impl(curr_proc()->pagetable, dst, srcva, len);
+}
+
+int copyout(uint64_t dstva, char *src, uint64_t len) {
+  return copyout_impl(curr_proc()->pagetable, dstva, src, len);
 }

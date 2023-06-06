@@ -38,5 +38,6 @@
 #define PLIC_SCLAIM(hart) (PLIC + 0x201004 + (hart)*0x2000)
 
 #define USTACK_BOTTOM 0xC0000000   // 3GB, user stack lower address
+#define UTEXT_START 0x1000
 
 #endif

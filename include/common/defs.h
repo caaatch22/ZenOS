@@ -12,6 +12,10 @@ typedef unsigned int uint32_t;
 
 typedef unsigned long uint64_t;
 
+typedef long long ssize_t;
+typedef unsigned long long size_t;
+typedef int pid_t;
+
 typedef int bool;
 
 #define TRUE 1
