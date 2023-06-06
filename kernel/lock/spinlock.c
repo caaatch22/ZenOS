@@ -12,7 +12,7 @@ void init_spinlock(spinlock_t *lock,char *name)
 void acquire_spinlock(spinlock_t *lock)
 {
   push_off();  //disable interrupt
-  if((lock->locked == 1) && (lock->holder == mycpu()))
+  if(holding(lock))
     PANIC("MULTIPLE ACQUIRE\n");
 
   while(__sync_lock_test_and_set(&lock->locked, 1))

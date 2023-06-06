@@ -140,7 +140,7 @@ void usertrapret() {
   // we're about to switch the destination of traps from
   // kerneltrap() to usertrap(), so turn off interrupts until
   // we're back in user space, where usertrap() is correct.
-  
+
   // intr_off();
   set_usertrap();
   struct trapframe *trapframe = curr_proc()->trapframe;
@@ -231,7 +231,6 @@ void kerneltrap() {
   // ASSERT(!intr_get(), "Interrupt can not be turned on in trap handler");
   // ASSERT((sstatus & SSTATUS_SPP) != 0, "kerneltrap: not from supervisor mode");
   // LOG_DEBUG("Enter kernel trap handler, scause=%p, sepc=%p", scause,sepc);
-
   if (scause & (1ULL << 63)) {  // interrupt
     kernel_interrupt_handler(scause, stval, sepc);
     } else {  // exception

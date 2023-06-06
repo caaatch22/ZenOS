@@ -88,6 +88,14 @@ struct super_block rootfs = {
 		.op.read = fs_read,
 		.op.clear = fs_clear,
 };
+struct super_block virtfs = {
+		.dev = NULL,
+		.op.alloc_inode = fat_alloc_inode,
+		.op.destroy_inode = fat_destroy_inode,
+		.op.write = fs_write,
+		.op.read = fs_read,
+		.op.clear = fs_clear,
+};
 
 static struct dentry *dentry_fs_generate(struct super_block *sb,
 							struct dentry *parent, char *name,
@@ -98,6 +106,7 @@ static struct dentry *dentry_fs_generate(struct super_block *sb,
 
 	ip = kmalloc(sizeof(struct inode));
 	de = kmalloc(sizeof(struct dentry));
+
 	memset(de, 0, sizeof(struct dentry));
 	memset(ip, 0, sizeof(struct inode));
 
@@ -136,10 +145,13 @@ void rootfs_init()
 	int inum = 1;
 
 	// rootfs
-	memset(&rootfs, 0, sizeof(struct super_block));
+	//memset(&rootfs, 0, sizeof(struct super_block));
 	init_sleeplock(&rootfs.sb_lock, "rootfs_sb");
 	init_spinlock(&rootfs.cache_lock, "rootfs_dcache");
 	rootfs.root = dentry_fs_generate(&rootfs, NULL, "/", inum++, T_DIR, 0);
+
+
+
 
 	// devfs
 	struct dentry *vda2, *vda3, *console, *zero, *null;
@@ -152,6 +164,14 @@ void rootfs_init()
 	console = dentry_fs_generate(&devfs, devfs.root, "console", inum++, T_DEVICE, dev_num.get_number(&dev_num));
 	zero = dentry_fs_generate(&devfs, devfs.root, "zero", inum++, T_DEVICE, dev_num.get_number(&dev_num));
 	null = dentry_fs_generate(&devfs, devfs.root, "null", inum++, T_DEVICE, dev_num.get_number(&dev_num));
+
+	//virtfs
+	/*
+	init_sleeplock(&virtfs.sb_lock, "virtfs_sb");
+	init_spinlock(&virtfs.cache_lock, "virtfs_dcache");
+	virtfs.root = dentry_fs_generate(&virtfs, NULL, "/", inum++, T_DIR, 0);
+	virtfs.dev_num = vda3->inode->dev_num;
+	*/
 
 	// vda2's fop will later init in mount,
 	// Because it needs a new FS to R/W data on fat32.
@@ -186,14 +206,13 @@ void rootfs_init()
 	mount_init_fs(&devfs, dir);
 	iunlockput(dir);
 
-	if ((dir = create("/proc", T_DIR, NULL)) == NULL)
-		PANIC("in rootfs.c: create //proc wrong!");
-	iunlockput(dir);
-	dir = namei("/proc");
-	ilock(dir);
-	mount_init_fs(&procfs, dir);
-	iunlockput(dir);
-
+	// if ((dir = create("/proc", T_DIR, NULL)) == NULL)
+	// 	PANIC("in rootfs.c: create //proc wrong!");
+	// iunlockput(dir);
+	// dir = namei("/proc");
+	// ilock(dir);
+	// mount_init_fs(&procfs, dir);
+	// iunlockput(dir);
 }
 
 /**
@@ -230,12 +249,11 @@ static int fs_read(struct super_block *sb, uint32_t usr, char *dst, uint64_t sec
 {
 	if (off + len > BUFFER_SIZE)
 		PANIC("rootfs read out of boundry");
-
 	LOG_INFO("sec:%d off:%d len:%d\n", sectorno, off, len);
+
 
 	struct buf *b = buffer_fetch(sb->dev_num, sectorno, &blk_buf_list);
 	int ret;
-
 	if (usr) {
 		ret = copyout2((uint64_t)dst, b->payload + off, len);
 	}

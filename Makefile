@@ -114,7 +114,6 @@ initrd.img:
 	-mkdir ./build/mnt
 	mount ./build/initrd.img ./build/mnt
 	mkdir ./build/mnt/bin
-	mkdir ./build/mnt/dev
 	umount ./build/initrd.img
 
 clean:

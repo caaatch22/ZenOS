@@ -7,7 +7,7 @@ struct cpu cpus[NCPU];
 // Interrupts must be disabled.
 struct cpu *
 mycpu(void) {
-  // KERNEL_ASSERT(!intr_get(), "mycpu");
+  //ASSERT(!intr_get(), "mycpu");
   int id = cpuid();
   struct cpu *c = &cpus[id];
   return c;
