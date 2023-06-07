@@ -78,6 +78,7 @@ loadseg(pagetable_t pagetable, uint64_t va, struct inode *ip, uint32_t offset, u
 // push arg or env strings into user stack, return strings count
 static int pushstack(pagetable_t pt, uint64_t table[], char **utable, int maxc, uint64_t *spp)
 {
+  LOG_DEBUG("utable: %p", utable);
   uint64_t sp = *spp;
   uint64_t stackbase = PAGE_ROUNDDOWN(sp);
   uint64_t argc, argp;
@@ -87,7 +88,9 @@ static int pushstack(pagetable_t pt, uint64_t table[], char **utable, int maxc, 
     LOG_ERROR("allocpage==NULL\n");
     return -1;
   }
+
   for (argc = 0; utable; argc++) {
+    LOG_DEBUG("utable: %p", utable);
     if (argc >= maxc || fetchaddr((uint64_t)(utable + argc), &argp) < 0){
       LOG_ERROR("fetchaddr wrong\n");
       goto bad;
@@ -121,6 +124,7 @@ bad:
 // All argvs are pointers came from user space, and should be checked by sys_caller
 int execve(char *path, char **argv, char **envp)
 {
+  LOG_DEBUG("argv: %p", argv);
   struct inode *ip = NULL;
   uint64_t elf_entryInMem = 0;  // The first seg's start address in mem
   pagetable_t pagetable = NULL;
@@ -247,6 +251,7 @@ int execve(char *path, char **argv, char **envp)
   // value, which goes in a0.
   long long argc, envc;
   uint64_t uargv[MAXARG + 1], uenvp[MAXENV + 1];
+  LOG_DEBUG("argv: %p", argv);
   if ((envc = pushstack(pagetable, uenvp, envp, MAXENV, &sp)) < 0 ||
       (argc = pushstack(pagetable, uargv, argv, MAXARG, &sp)) < 0) {
     //__debug_warn("execve", "fail to push argv or envp into user stack\n");

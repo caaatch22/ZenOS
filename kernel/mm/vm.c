@@ -322,6 +322,7 @@ int copyin(pagetable_t pagetable, char *dst, uint64_t srcva, uint64_t len) {
 }
 
 int copyin2(char *dst, uint64_t srcva, uint64_t len) {
+  LOG_DEBUG("page_table %p", curr_proc()->pagetable);
   return copyin(curr_proc()->pagetable, dst, srcva, len);
 }
 

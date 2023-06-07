@@ -182,6 +182,7 @@ found:
   p->waiting_target = NULL;
   p->parent = NULL;
   p->ustack = 0;
+  p->segment = NULL;
   p->heap_start = 0;
   p->pagetable = proc_pagetable(p);
   if (p->pagetable == 0) {
@@ -443,7 +444,7 @@ int fetchaddr(uint64_t addr, uint64_t *ip)
   struct proc *p = curr_proc();
 
   // if (partofseg(p->segment, addr, addr + sizeof(uint64_t)) == NONE){
-  //   __debug_error(":fetchaddr", "addr is not part of this proc\n");
+  //   LOG_ERROR("addr is not part of this proc\n");
   //   return -1;
   // }
 

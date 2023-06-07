@@ -3,6 +3,7 @@
 #include "arch/hw.h"
 #include "proc/proc.h"
 #include "syscall/syscall.h"
+#include "fs/virtio_blk.h"
 
 extern char trapforward[], uservec[], userret[];
 extern void kernelvec();
@@ -31,10 +32,20 @@ void kernel_interrupt_handler(uint64_t scause, uint64_t stval, uint64_t sepc) {
   int irq;
   switch (cause) {
   case SupervisorTimer:
-    // TODO
+    set_next_timer();
+    yield();
     break;
   case SupervisorExternal:
-    // TODO
+        irq = plic_claim();
+        if (irq == VIRTIO0_IRQ) {
+            virtio_blk_intr();
+        } else if(irq>0) {
+            LOG_WARN("unexpected interrupt irq=%d", irq);
+        }
+        if (irq) {
+            plic_complete(irq);
+        }
+
     break;
   default:
     LOG_ERROR("unknown kernel interrupt: %p, sepc=%p, stval = %p\n", scause, sepc, stval);
@@ -94,11 +105,24 @@ void user_interrupt_handler(uint64_t scause, uint64_t stval, uint64_t sepc) {
   int irq;
   switch (scause & 0xff) {
   case SupervisorTimer:
-    // TODO
+    set_next_timer();
+    yield();
     break;
   case SupervisorExternal:
-    // TODO
-    break;
+        irq = plic_claim();
+        if (irq == 10) {
+            LOG_INFO("unexpected interrupt irq=UART0_IRQ");
+
+        } else if (irq == VIRTIO0_IRQ) {
+            virtio_blk_intr();
+        } else if (irq) {
+            LOG_INFO("unexpected interrupt irq=%d", irq);
+        }
+        if (irq) {
+
+            plic_complete(irq);
+        }
+        break;
   default:
     LOG_ERROR("Unknown interrupt in user application: %p, stval = %p sepc = %p\n", scause, stval, sepc);
     exit(-1);

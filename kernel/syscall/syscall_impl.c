@@ -737,7 +737,7 @@ int sys_execve( char *pathname_va, char * argv_va[], char * envp_va[]) {
 
   LOG_TRACE("argv_va=%d argc=%d", argv_va, argc);
   LOG_TRACE("envp_va=%d envc=%d", envp_va, envc);
-  return execve(name, argv, envp);
+  return execve(name, argv_va, envp);
 }
 
 // // Create the path new as a link to the same inode as old.
