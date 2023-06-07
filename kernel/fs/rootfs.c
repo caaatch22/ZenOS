@@ -239,7 +239,7 @@ static int fs_read(struct super_block *sb, uint32_t usr, char *dst, uint64_t sec
 {
 	if (off + len > BUFFER_SIZE)
 		PANIC("rootfs read out of boundry");
-	LOG_INFO("sec:%d off:%d len:%d dst:%p", sectorno, off, len, dst);
+	LOG_INFO("dev:%d sec:%d off:%d len:%d dst:%p",sb->dev_num, sectorno, off, len, dst);
 
 	struct buf *b = buffer_fetch(sb->dev_num, sectorno, &blk_buf_list);
 
@@ -248,6 +248,8 @@ static int fs_read(struct super_block *sb, uint32_t usr, char *dst, uint64_t sec
 		ret = copyout2((uint64_t)dst, (uint64_t)(b->payload) + off, len);
 	}
 	else {
+		// uint32_t *p = (uint64_t)(b->payload) + 76;
+		// LOG_DEBUG("%d", *p);
 		memmove(dst, (uint64_t)(b->payload) + off, len);
 		ret = 0;
 	}

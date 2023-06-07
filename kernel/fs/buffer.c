@@ -54,21 +54,18 @@ buf_t *buffer_hash_search(uint32_t dev_id, uint64_t sector, buf_hash_map_t *hash
         hash->map[(sector + count) % BUFFER_HASH_SIZE].sector == sector && \
         hash->map[(sector + count) % BUFFER_HASH_SIZE].dev_id == dev_id ) // if collide, move to next slot;
       return hash->map[(sector + count) % BUFFER_HASH_SIZE].buf;
-
-    if(hash->map[(sector + count) % BUFFER_HASH_SIZE].buf == NULL)
-      break;
   }
-    return NULL;
+  return NULL;
 }
 
 void buffer_hash_insert(buf_t *buf, buf_hash_map_t *hash)
 {
   uint32_t count;
   for (count = 0; count < BUFFER_HASH_SIZE; ++count) {
-    if(hash->map[(buf->sector % BUFFER_HASH_SIZE + count) % BUFFER_HASH_SIZE].buf == NULL) {
-      hash->map[(buf->sector % BUFFER_HASH_SIZE + count) % BUFFER_HASH_SIZE].buf = buf;
-      hash->map[(buf->sector % BUFFER_HASH_SIZE + count) % BUFFER_HASH_SIZE].sector = buf->sector;
-      hash->map[(buf->sector % BUFFER_HASH_SIZE + count) % BUFFER_HASH_SIZE].dev_id = buf->dev_id;
+    if(hash->map[(buf->sector + count) % BUFFER_HASH_SIZE].buf == NULL) {
+      hash->map[(buf->sector + count) % BUFFER_HASH_SIZE].buf = buf;
+      hash->map[(buf->sector + count) % BUFFER_HASH_SIZE].sector = buf->sector;
+      hash->map[(buf->sector + count) % BUFFER_HASH_SIZE].dev_id = buf->dev_id;
       return;
     }
   }
@@ -79,9 +76,10 @@ void buffer_hash_insert(buf_t *buf, buf_hash_map_t *hash)
 void buffer_hash_delete(buf_t *buf, buf_hash_map_t *hash) {
   uint32_t count;
   for (count = 0; count < BUFFER_HASH_SIZE; ++count) {
-    if(hash->map[(buf->sector%BUFFER_HASH_SIZE+count)%BUFFER_HASH_SIZE].sector == buf->sector && \
-       hash->map[(buf->sector%BUFFER_HASH_SIZE+count)%BUFFER_HASH_SIZE].dev_id == buf->dev_id ) {
-      hash->map[(buf->sector % BUFFER_HASH_SIZE + count) % BUFFER_HASH_SIZE].buf = NULL;
+    if(hash->map[(buf->sector + count) % BUFFER_HASH_SIZE].sector == buf->sector && \
+       hash->map[(buf->sector + count) % BUFFER_HASH_SIZE].dev_id == buf->dev_id && \
+       hash->map[(buf->sector + count) % BUFFER_HASH_SIZE].buf != NULL) {
+      hash->map[(buf->sector + count) % BUFFER_HASH_SIZE].buf = NULL;
       return;
     }
   }
@@ -93,7 +91,15 @@ buf_t *buffer_fetch(uint32_t dev_id, uint64_t sector, buf_list_t *buf_list)
 {
   acquire_spinlock(&buf_list->buffer_lock);
   buf_t *target;
+
+  // LOG_DEBUG("buffer_fetch: dev:%d sector: %d", dev_id, sector);
+
   target = buffer_hash_search(dev_id, sector, &buf_list->hash);
+
+  // if(target!=NULL)
+	//  LOG_DEBUG("buffer hit:%d", target->sector);
+	// else
+	//  LOG_DEBUG("buffer miss");
 
   if(!target) {
     target = buffer_alloc(buf_list);
@@ -101,7 +107,6 @@ buf_t *buffer_fetch(uint32_t dev_id, uint64_t sector, buf_list_t *buf_list)
     target->dev_id = dev_id;
     target->read_pending = 1;
     init_sleeplock(&target->lock,"buffer_lock");
-    buffer_hash_insert(target, &buf_list->hash);
 
     release_spinlock(&buf_list->buffer_lock);
 
@@ -109,6 +114,7 @@ buf_t *buffer_fetch(uint32_t dev_id, uint64_t sector, buf_list_t *buf_list)
 
 
     blk_op_table[dev_id].rw(target, 0); // will request a read and sleep;
+
     release_sleeplock(&target->lock);
     acquire_spinlock(&buf_list->buffer_lock);
     target->dirty = 0;
@@ -120,6 +126,9 @@ buf_t *buffer_fetch(uint32_t dev_id, uint64_t sector, buf_list_t *buf_list)
   while (target->read_pending == 1)
     ;
   buffer_lru_top(target, buf_list);
+
+  uint32_t *p = (uint64_t)(target->payload) + 76;
+  // LOG_DEBUG("get buffer:sector:%d 76off:0x%x", target->sector, *p);
 
   release_spinlock(&buf_list->buffer_lock);
   acquire_sleeplock(&target->lock);

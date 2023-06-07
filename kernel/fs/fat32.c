@@ -162,6 +162,10 @@ static uint32_t read_fat(struct super_block *sb, uint32_t cluster)
     }
     uint32_t fat_sec = fat_sec_of_clus(fat, cluster, 1);
     uint32_t sec_off = fat_offset_of_clus(fat, cluster);
+
+    // LOG_DEBUG("fatsec:%d,sec_off:%d", fat_sec, sec_off);
+    // uint32_t *p = INITRD_START + 32 * 512 + 80;
+    // LOG_DEBUG("0x%x", *p);
     // here should be a cache layer for FAT table, but not implemented yet.
     uint32_t next_clus;
     acquire_sleeplock(&sb->sb_lock);
@@ -247,8 +251,8 @@ uint32_t rw_clus(struct super_block *sb, uint32_t cluster, int write, int user, 
     uint32_t tot, m;
     uint16_t const bps = fat->bpb.byts_per_sec;
     uint32_t sec = first_sec_of_clus(fat, cluster) + off / bps;
-
-    //LOG_INFO("data:%p\n", data);
+    // LOG_DEBUG("sec:%d", sec);
+    // LOG_INFO("data:%p\n", data);
     for (tot = 0; tot < n; tot += m, off += m, data += m, sec++) {
         m = bps - off % bps;
         if (n - tot < m) {
@@ -321,10 +325,14 @@ static int reloc_clus(struct inode *ip, uint32_t off, int alloc)
 {
     struct fat32_dentry *entry = i2fat(ip);
     struct fat32_sb *fat = sb2fat(ip->sb);
-
+    // LOG_DEBUG("eclucnt:%d,off:%d", entry->clus_cnt, off);
     int clus_num = off / fat->byts_per_clus;
-    while (clus_num > entry->clus_cnt) {
+    // LOG_DEBUG("clusnum:%d", clus_num);
+    while (clus_num > entry->clus_cnt)
+    {
         int clus = read_fat(ip->sb, entry->cur_clus);
+        LOG_DEBUG("clus:%d", clus);
+
         if (clus >= FAT32_EOC) {
             if (!alloc || (clus = alloc_clus(ip->sb)) == 0) {
                 goto fail;
@@ -372,6 +380,8 @@ int fat_read_file(struct inode *ip, uint32_t user_dst, uint64_t dst, uint32_t of
 {
     struct fat32_dentry *entry = i2fat(ip);
 
+    LOG_DEBUG("fat read file");
+
     if (off > entry->file_size || off + n < off || (entry->attribute & ATTR_DIRECTORY)) {
         return 0;
     }
@@ -389,11 +399,13 @@ int fat_read_file(struct inode *ip, uint32_t user_dst, uint64_t dst, uint32_t of
         if (n - tot < m) {
             m = n - tot;
         }
-        if (rw_clus(ip->sb, entry->cur_clus, 0, user_dst, dst, off % bpc, m) != m) {
+        // LOG_DEBUG("n:%d tot:%d off:%d m:%d entry->curclus:%d entry->first:%d entry->cluscnt:%d", n, tot, off, m, entry->cur_clus, entry->first_clus,entry->clus_cnt);
+        if (rw_clus(ip->sb, entry->cur_clus, 0, user_dst, dst, off % bpc, m) != m)
+        {
             break;
         }
     }
-    // LOG_INFO("file:%s off:%d len:%d read:%d\n", ip->entry->filename, off, n, tot);
+    LOG_INFO("file:%s off:%d len:%d read:%d\n", ip->entry->name, off, n, tot);
     return tot;
 }
 

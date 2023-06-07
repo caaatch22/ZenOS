@@ -47,6 +47,8 @@ loadseg(pagetable_t pagetable, uint64_t va, struct inode *ip, uint32_t offset, u
     va = PAGE_ROUNDDOWN(va);
   }
 
+  LOG_DEBUG("off:%d sz:%d ipname:%s", offset, sz, ip->entry->name );
+
   uint32_t i, n;
   uint64_t pa;
   if((va % PAGE_SIZE) != 0)
@@ -62,7 +64,8 @@ loadseg(pagetable_t pagetable, uint64_t va, struct inode *ip, uint32_t offset, u
       n = sz - i;
     else
       n = PAGE_SIZE;
-    if(ip->fop->read(ip, 0, (uint64_t)pa, offset + i, n) != n)
+    LOG_DEBUG("i:%d, n:%d filesize:%d", i, n, ip->size);
+    if (ip->fop->read(ip, 0, (uint64_t)pa, offset + i, n) != n)
       return -1;
   }
 
@@ -133,7 +136,7 @@ int execve(char *path, char **argv, char **envp)
     goto bad;
   }
 
-  // Make a copy of p->pagetable without old user space, 
+  // Make a copy of p->pagetable without old user space,
   // but with the same kstack we are using now, which can't be changed.
   if ((pagetable = (pagetable_t)pm_alloc()) == NULL)
     goto bad;
@@ -153,7 +156,7 @@ int execve(char *path, char **argv, char **envp)
     LOG_ERROR("read elf_head fail\n");
     goto bad;
   }
-    
+
   // Load program into memory.
   struct proghdr ph;
   int flags;
@@ -173,7 +176,7 @@ int execve(char *path, char **argv, char **envp)
       iunlock(ip);
       goto bad;
     }
-    
+
     if (ph.off == 0){
       elf_entryInMem = ph.vaddr;  // For later AUX stack
     }
@@ -206,7 +209,7 @@ int execve(char *path, char **argv, char **envp)
   iunlock(ip);
   //iput(ip);
 
-  
+
   // Heap
   flags = PTE_R | PTE_W;
   for (seg = seghead; seg->next != NULL; seg = seg->next);
@@ -286,7 +289,7 @@ int execve(char *path, char **argv, char **envp)
   sp -= flags;
 
   //__debug_info("execve", "pushing argv/envp table\n");
-  if (sp < stackbase || 
+  if (sp < stackbase ||
       copyout(pagetable, auxvec_addr, (char *)auxvec, sizeof(auxvec)) < 0 ||
       copyout(pagetable, uenvp_addr, (char *)uenvp, (envc + 1) * sizeof(uint64_t)) < 0 ||
       copyout(pagetable, uargv_addr, (char *)uargv, (argc + 1) * sizeof(uint64_t)) < 0 ||
@@ -333,7 +336,7 @@ int execve(char *path, char **argv, char **envp)
   return 0;
 
  bad:
-  
+
   if (seghead) {
     delsegs(pagetable, seghead);
   }
@@ -345,7 +348,7 @@ int execve(char *path, char **argv, char **envp)
     //iunlock(ip);
     iput(ip);
   }
-  
+
   LOG_ERROR("something wrong\n");
   return -1;
 }

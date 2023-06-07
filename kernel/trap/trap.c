@@ -152,7 +152,7 @@ void usertrapret() {
   trapframe->kernel_hartid = r_tp(); // hartid for cpuid()
   LOG_DEBUG("epc=%p",trapframe->epc);
   w_sepc(trapframe->epc);
-  
+
   // set up the registers that trampoline.S's sret will use
   // to get to user space.
   // set S Previous Privilege mode to User.

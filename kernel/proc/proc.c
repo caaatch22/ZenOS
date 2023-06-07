@@ -15,6 +15,7 @@
 
 extern void swtch(struct context *, struct context *);
 extern void rootfs_init();
+extern void fs_test(char *);
 
 struct proc pool[NPROC];
 
@@ -36,7 +37,7 @@ userinit(void)
 
   p = allocproc();
   initproc = p;
-  
+
   // allocate one user page and copy init's instructions
   // and data into it.
   uvminit(p->pagetable, initcode, sizeof(initcode));
@@ -408,8 +409,8 @@ forkret(void)
     // printf("[forkret]first scheduling\n");
     first = 0;
     rootfs_init();
+    fs_test("/bin");
     p->cwd = namei("/");
-    
   }
 
   // p->iktmp = readtime();
