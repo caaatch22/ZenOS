@@ -545,6 +545,15 @@ int sys_mkdirat(int dirfd, char *path_va, int mode)
 	return 0;
 }
 
+// only support SIGCHLD, and other params are ignored.
+pid_t sys_clone(unsigned long flags, void *child_stack, void *ptid, void *tls, void *ctid) {
+//    if (flags != SIGCHLD) {
+//        LOG_INFO("clone: flags must be SIGCHLD");
+//        return -1;
+//    }
+  return clone(child_stack);
+}
+
 // // Create the path new as a link to the same inode as old.
 // int sys_link(char *oldpath_va, char *newpath_va) {
 //   char name[DIRSIZ], new[MAX_NAME_SIZE], old[MAX_NAME_SIZE];

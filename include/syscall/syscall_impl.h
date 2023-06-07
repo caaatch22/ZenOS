@@ -46,7 +46,7 @@ int sys_mkdir(char *pathname_va);
 
 int sys_close(int fd);
 
-pid_t sys_fork(void);
+pid_t sys_clone(unsigned long flags, void *child_stack, void *ptid, void *tls, void *ctid);
 
 uint64_t sys_times(struct tms *tms_va);
 

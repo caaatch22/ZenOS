@@ -59,6 +59,7 @@ struct proc {
   struct trapframe *trapframe; // data page for trampoline.S, physical address
   struct context context;      // swtch() here to run process
   uint64_t total_size;         // total memory used by this process
+  uint64_t heap_start;           // start of heap
   uint64_t heap_sz;
   uint64_t stride;
   uint64_t priority;
@@ -108,5 +109,8 @@ void yield();
 
 // wait.c
 int wait(int pid, int *status, int options);
+
+// fork.c
+int clone(void *stack);
 
 #endif // PROC_H

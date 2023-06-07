@@ -313,3 +313,65 @@ int copyinstr(pagetable_t pagetable, char *dst, uint64_t srcva, uint64_t max) {
     return -1;
   }
 }
+
+
+int uvmcopy(pagetable_t old_pagetable, pagetable_t new_pagetable, uint64_t total_size)
+{
+  uint64_t *pte;
+  uint64_t pa, cur_addr;
+  uint64_t flags;
+  char *mem;
+  // debugcore("to copy ustack, sz=%d", total_size);
+  // copy ustack
+  for (cur_addr = USTACK_BOTTOM - USTACK_SIZE; cur_addr < USTACK_BOTTOM; cur_addr += PAGE_SIZE) {
+    pte = pte_fetch(old_pagetable, cur_addr);
+    if ((*pte & PTE_V) == 0)
+      PANIC("uvmcopy: page not present");
+    pa = PTE2PA_PPN(*pte);
+    flags = PTE_FLAGS(*pte);
+    if ((mem = pm_alloc()) == 0)
+      goto err_ustack;
+    memmove(mem, (char *)pa, PAGE_SIZE);
+    // we dont have error nunmber here
+    va_page_bind_range(new_pagetable, cur_addr, (uint64_t)mem, PAGE_SIZE, flags);
+    
+    // if (mappages(new_pagetable, cur_addr, PAGE_SIZE, (uint64_t)mem, flags) != 0)
+    // {
+    //   recycle_physical_page(mem);
+    //   goto err_ustack;
+    // }
+  }
+
+  total_size -= USTACK_SIZE;
+  // debugcore("to copy bin, sz=%d", total_size);
+  // free any other
+  for (cur_addr = UTEXT_START; cur_addr < UTEXT_START + total_size; cur_addr += PAGE_SIZE) {
+    pte = pte_fetch(old_pagetable, cur_addr);
+    // if ((pte = walk(old_pagetable, cur_addr, FALSE)) == 0)
+    //   PANIC("uvmcopy: pte should exist");
+    if ((*pte & PTE_V) == 0)
+      PANIC("uvmcopy: page not present");
+    pa = PTE2PA_PPN(*pte);
+    flags = PTE_FLAGS(*pte);
+    if ((mem = pm_alloc()) == 0)
+      goto err;
+    memmove(mem, (char *)pa, PAGE_SIZE);
+    va_page_bind_range(new_pagetable, cur_addr, (uint64_t)mem, PAGE_SIZE, flags);
+    // {
+    //   recycle_physical_page(mem);
+    //   goto err;
+    // }
+  }
+  return 0;
+
+err_ustack:
+  LOG_DEBUG("Copy ustack error");
+  // uvmunmap
+  va_page_unbind_range(new_pagetable, USTACK_BOTTOM - USTACK_SIZE, USTACK_SIZE / PAGE_SIZE, TRUE);
+  return -1;
+
+err:
+  LOG_DEBUG("Copy user space error");
+  va_page_unbind_range(new_pagetable, UTEXT_START, (cur_addr - UTEXT_START) / PAGE_SIZE, TRUE);
+  return -1;
+}

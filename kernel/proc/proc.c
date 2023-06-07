@@ -8,6 +8,7 @@
 #include "mm/vm.h"
 #include "mm/pmallocator.h"
 #include "common/common.h"
+#include "fs/vfs.h"
 
 extern void swtch(struct context *, struct context *);
 extern void rootfs_init();
@@ -109,6 +110,8 @@ void proc_free_mem_and_pagetable(struct proc* p) {
   free_user_mem_and_pagetables(p->pagetable, p->total_size);
   p->pagetable = NULL;
   p->total_size = 0;
+  p->heap_start = 0;
+  p->heap_sz = 0;
 }
 
 
@@ -137,6 +140,7 @@ found:
   p->waiting_target = NULL;
   p->parent = NULL;
   p->ustack = 0;
+  p->heap_start = 0;
   p->pagetable = proc_pagetable(p);
   if (p->pagetable == 0) {
     PANIC("");
@@ -183,6 +187,7 @@ void freeproc(struct proc *p) {
   p->exit_code = 0;
   p->ustack = 0;
   p->kstack = 0;
+  p->heap_start = 0;
   memset(&p->context, 0, sizeof(p->context));
   p->stride = 0;
   p->priority = 0;

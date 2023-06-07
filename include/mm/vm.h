@@ -20,6 +20,8 @@
 #define PTE_X (1ul << 3)
 #define PTE_U (1ul << 4)
 
+#define PTE_FLAGS(pte) ((pte) &0x3FF)
+
 struct pagetable {
   uint64_t page_entry[1 << 9];
 };
@@ -57,5 +59,7 @@ int copyin2(char *dst, uint64_t srcva, uint64_t len);
 int copyout2(uint64_t dstva, char *src, uint64_t len);
 
 int copyinstr(pagetable_t pagetable, char *dst, uint64_t srcva, uint64_t max);
+
+int uvmcopy(pagetable_t old_pagetable, pagetable_t new_pagetable, uint64_t total_size);
 
 #endif
