@@ -4,11 +4,71 @@
 #include "mm/pmallocator.h"
 #include "proc/proc.h"
 #include "utils/string.h"
+#include "mm/usrmm.h"
+#include "lock/spinlock.h"
+
+#define MAX_PAGES_NUM 0x600
+
+static struct spinlock page_ref_lock;
+static uint8_t page_ref_table[MAX_PAGES_NUM];  // user pages ref, for COW fork mechanism
 
 pagetable_t kernel_pagetable;
 
 extern char etext[];
 extern char trapforward[];
+extern char ekernel[];
+
+static int __hash_page_idx(uint64_t pa)
+{
+	// if (pa % PGSIZE || pa < PAGE_ROUNDUP((uint64_t)kernel_end) || pa >= PHYSTOP)
+	// 	panic("__hash_page");
+  return (pa - PAGE_ROUNDUP((uint64_t)ekernel)) >> 12;
+}
+
+// Register a page for user, init it for later dup
+static inline void pagereg(uint64_t pa, uint8_t init)
+{
+  acquire_spinlock(&page_ref_lock);
+	page_ref_table[__hash_page_idx(pa)] = init;
+  release_spinlock(&page_ref_lock);
+}
+
+// This is used in page fault handler. If two process write the same page
+// in the same time, let the process who gets the lock monopolize the page.
+static int monopolizepage(uint64_t pa)
+{
+  acquire_spinlock(&page_ref_lock);
+	int idx = __hash_page_idx(pa);
+	if (page_ref_table[idx] == 1) {
+  	release_spinlock(&page_ref_lock);
+		return 1;
+	}
+	page_ref_table[idx]--; // should hold the lock until copying done
+	return 0;
+}
+
+static inline void pagecopydone(void)
+{
+	release_spinlock(&page_ref_lock);
+}
+
+static inline int pagedup(uint64_t pa)
+{
+  acquire_spinlock(&page_ref_lock);
+  int ref = ++page_ref_table[__hash_page_idx(pa)];
+  release_spinlock(&page_ref_lock);
+  // __debug_info("pagedup", "page=%p, ref=%d\n", pa, ref);
+	return ref;
+}
+
+static inline int pageput(uint64_t pa)
+{
+  acquire_spinlock(&page_ref_lock);
+  int ref = --page_ref_table[__hash_page_idx(pa)];
+  release_spinlock(&page_ref_lock);
+  // __debug_info("pageput", "page=%p, ref=%d\n", pa, ref);
+	return ref;
+}
 
 
 uint64_t *pte_fetch(pagetable_t pt, uint64_t va) //do not gaurd the given pte to be vaild or with any permission
@@ -86,8 +146,10 @@ void va_page_bind_range(pagetable_t pt, uint64_t va, uint64_t pa ,uint64_t size,
     PANIC("range bind error");
 }
 
-void va_page_unbind(pagetable_t pt, uint64_t va, int do_free)
+void va_page_unbind(pagetable_t pt, uint64_t va, int flag)
 {
+  int do_free = flag & VM_FREE;
+  int usr = flag & VM_USER;
   uint64_t *pte = pte_fetch(pt, va);
 
   if ((*pte & PTE_V) == 0)
@@ -96,9 +158,8 @@ void va_page_unbind(pagetable_t pt, uint64_t va, int do_free)
   // #define PTE_FLAGS(pte) ((pte) &0x3FF)
   // if (PTE_FLAGS(*pte) == PTE_V)
   //   PANIC("not the third level pte");
-
-  if (do_free) {
-    uint64_t pa = PTE2PA_PPN(*pte);
+  uint64_t pa = PTE2PA_PPN(*pte);
+  if (do_free && (!usr || pageput(pa) == 0)) {
     pm_free((pm_page_node *)pa);
   }
   *pte = 0;
@@ -107,15 +168,15 @@ void va_page_unbind(pagetable_t pt, uint64_t va, int do_free)
 // Remove npages of mappings starting from va. va must be
 // page-aligned. The mappings must exist.
 // Optionally free the physical memory.
-void va_page_unbind_range(pagetable_t pt, uint64_t va, uint64_t npages, int do_free)
+void va_page_unbind_range(pagetable_t pt, uint64_t va, uint64_t npages, int flag)
 {
   uint64_t a;
-  LOG_DEBUG("va=%p npages=%d do_free=%d", va, npages, do_free);
+  LOG_DEBUG("va=%p npages=%d flag=%d", va, npages, flag);
   if (!ALIGNED(va))
     PANIC("page not aligned in unbind");
 
   for (a = va; a < va + npages * PAGE_SIZE; a += PAGE_SIZE) {
-    va_page_unbind(pt, a, do_free);
+    va_page_unbind(pt, a, flag);
   }
 }
 
@@ -205,7 +266,7 @@ create_empty_pagetable()
   pagetable = (pagetable_t)pm_alloc();
   // do not need to memset, cause pm_alloc has memset that
   // if (pagetable != NULL) {
-  //   memset(pagetable, 0, PGSIZE);
+  //   memset(pagetable, 0, PAGE_SIZE);
   // }
   return pagetable;
 }
@@ -314,6 +375,36 @@ int copyinstr(pagetable_t pagetable, char *dst, uint64_t srcva, uint64_t max) {
   }
 }
 
+int
+copyinstr2(char *dst, uint64_t srcva, uint64_t max)
+{
+  struct seg *seg = locateseg(curr_proc()->segment, srcva);
+	if (seg == NULL)
+		return -1;
+  
+	// max is given by kernel, we should also check the max of user
+	uint64_t umax = seg->addr + seg->sz - srcva;
+	max = (max <= umax) ? max : umax;
+	if (copyin2(dst, srcva, max) < 0) {
+		return -1;
+	}
+
+  char *old = dst;
+  int got_null = 0;
+	while (max--) {
+		if (*dst == '\0') {
+			got_null = 1;
+			break;
+		}
+		dst++;
+	}
+  if(got_null) {
+    return dst - old;
+  } else {
+    return -1;
+  }
+}
+
 
 int uvmcopy(pagetable_t old_pagetable, pagetable_t new_pagetable, uint64_t total_size)
 {
@@ -374,4 +465,92 @@ err:
   LOG_DEBUG("Copy user space error");
   va_page_unbind_range(new_pagetable, UTEXT_START, (cur_addr - UTEXT_START) / PAGE_SIZE, TRUE);
   return -1;
+}
+
+
+
+// Allocate PTEs and physical memory to grow process from oldsz to
+// newsz, which need not be page aligned.  Returns new size or 0 on error.
+/**
+ * @param   start   user virtual addr that start to be allocated；should page-align
+ * @param   end     the ending user virtual addr of the alloction
+ * @param   perm    permission flags, PTE_W|R|X (PTE_U is a default flag)
+ * @return          param end if successful else 0
+ */
+uint64_t
+uvmalloc(pagetable_t pagetable, uint64_t start, uint64_t end, int perm)
+{
+  char *mem;
+  uint64_t a;
+
+  if (end > 0x80000000)
+    return 0;
+  if(end < start)
+    return start;
+
+  for(a = PAGE_ROUNDUP(start); a < end; a += PAGE_SIZE){
+    mem = pm_alloc();
+    if (mem == NULL) {
+      uvmdealloc(pagetable, start, a, NONE);
+      return 0;
+    }
+    memset(mem, 0, PAGE_SIZE);
+		pagereg((uint64_t)mem, 0);
+    va_page_bind_range(pagetable, a, (uint64_t)mem, PAGE_SIZE, perm | PTE_U);
+    // if (mappages(pagetable, a, PAGE_SIZE, (uint64_t)mem, perm | PTE_U) != 0)
+    // {
+    //   pm_free(mem);
+    //   uvmdealloc(pagetable, start, a, NONE);
+    //   return 0;
+    // }
+  }
+  return end;
+}
+
+// Deallocate user pages to bring the process size from oldsz to
+// newsz.  oldsz and newsz need not be page-aligned, nor does newsz
+// need to be less than oldsz.  oldsz can be larger than the actual
+// process size.  Returns the new process size.
+/**
+ * This function only deletes physical pages but not pagetable
+ * 
+ * @param   start   user virtual addr that start to be deleted (low addr)
+ * @param   end     the ending user virtual addr of the deletion
+ * @param   segt    type of the segment where we perform the deletion
+ * @return          param start if successful else 0
+ */
+uint64_t
+uvmdealloc(pagetable_t pagetable, uint64_t start, uint64_t end, enum segtype segt)
+{
+  if(start >= end)
+    return end;
+
+	int heapflag = segt == HEAP ? VM_HOLE : 0;
+  if (PAGE_ROUNDUP(start) < PAGE_ROUNDUP(end)) {
+    int npages = (PAGE_ROUNDUP(end) - PAGE_ROUNDUP(start)) / PAGE_SIZE;
+    va_page_unbind_range(pagetable, PAGE_ROUNDUP(start), npages, VM_FREE | VM_USER | heapflag);
+    // unmappages(pagetable, PAGE_ROUNDUP(start), npages, VM_FREE | VM_USER | heapflag);
+  }
+
+  return start;
+}
+
+
+/**
+ * Use usrmm to free all segments then call this to free
+ * the user part of the pagetable. The kernel part is handled
+ * by kvmfree()
+ */
+void
+uvmfree(pagetable_t pagetable)
+{
+  uint64_t pte;
+  
+  for (int i = 0; i < VA_VPN_FETCH(0x80000000, 1); i++) {
+    pte = pagetable->page_entry[i];
+    if (pte & PTE_V) {
+      free_pagetable_pages((pagetable_t) PTE2PA_PPN(pte));
+      pagetable->page_entry[i] = 0;
+    }
+  }
 }

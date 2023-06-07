@@ -395,4 +395,32 @@ static inline void sfence_vma(void)
     :);
 }
 
+/**
+ * RISC-V floating-point control and status register
+ */
+
+#define SSTATUS_FS_INIT		(1L << 13)
+#define SSTATUS_FS_CLEAN	(2L << 13)
+#define SSTATUS_FS_DIRTY	(3L << 13)
+#define SSTATUS_FS_BITS		(3L << 13)
+
+
+// 浮点舍入模式
+#define FRM_RNE		0
+#define FRM_RTZ		1
+#define FRM_RDN		2
+#define FRM_RUP		3
+#define FRM_RMM		4
+
+static inline uint64_t r_sstatus_fs()
+{
+	return r_sstatus() & SSTATUS_FS_BITS;
+}
+
+static inline void w_sstatus_fs(uint64_t bits)
+{
+	uint64_t status = r_sstatus() & ~SSTATUS_FS_BITS;
+	w_sstatus(status | (bits & SSTATUS_FS_BITS));
+}
+
 #endif

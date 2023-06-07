@@ -99,7 +99,7 @@ void proc_free_mem_and_pagetable(struct proc* p) {
   // for (int i = 0; i < MAX_PROC_SHARED_MEM_INSTANCE; i++) {
   //   if (p->shmem[i]) { // active shared memory
   //     LOG_DEBUG("free shared mem");
-  //     uvmunmap(p->pagetable, (uint64)p->shmem_map_start[i], p->shmem[i]->page_cnt, FALSE);
+  //     uvmunmap(p->pagetable, (uint64_t)p->shmem_map_start[i], p->shmem[i]->page_cnt, FALSE);
   //     // debugcore("free page = %d", get_free_page_count());
   //     drop_shared_mem(p->shmem[i]);
   //     p->shmem[i] = NULL;
@@ -373,4 +373,50 @@ forkret(void)
 
   // p->iktmp = readtime();
   usertrapret();
+}
+
+
+uint64_t * access_addr(struct proc *p, pagetable_t pg, uint64_t addr) {
+  print("check pid:%d\n", p->pid);
+  uint64_t *pte = pte_fetch(pg, addr);
+  // if(pte == NULL){
+  //   walk_debug(pg, 0x4097);
+  // }
+  print("check over. pid:%d\n", p->pid);
+  if(pte == NULL || (*pte & PTE_V) == NULL)
+    return NULL;
+  return pte;
+}
+
+// Fetch the uint64_t at addr from the current process.
+/**
+ * @brief fetch uint64_t at addr into *ip
+ * 
+ * @param addr 
+ * @param ip 
+ * @return int 
+ */
+int fetchaddr(uint64_t addr, uint64_t *ip)
+{
+  struct proc *p = curr_proc();
+
+  // if (partofseg(p->segment, addr, addr + sizeof(uint64_t)) == NONE){
+  //   __debug_error(":fetchaddr", "addr is not part of this proc\n");
+  //   return -1;    
+  // }
+
+  if(copyin2((char *)ip, addr, sizeof(*ip)) != 0)
+    return -1;
+  return 0;
+}
+
+int fetchstr(uint64_t addr, char *buf, int max)
+{
+  // struct proc *p = myproc();
+  // int err = copyinstr(p->pagetable, buf, addr, max);
+  int ret = copyinstr2(buf, addr, max);
+  return ret;
+  // if(err < 0)
+  //   return err;
+  // return strlen(buf);
 }

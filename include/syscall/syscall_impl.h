@@ -8,7 +8,9 @@ int sys_getcwd(char *ubuf, size_t size);
 
 int sys_fstat(int fd, struct kstat *statbuf_va);
 
-int sys_execv(char *pathname_va, char *argv_va[]);
+int sys_exec(char *pathname_va, char **argv_va);
+
+int sys_execve(char *path, char **argv, char **envp);
 
 int sys_exit(int status);
 

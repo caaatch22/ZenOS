@@ -58,8 +58,10 @@ struct proc {
   uint64_t kstack;             // Virtual address of kernel stack
   struct trapframe *trapframe; // data page for trampoline.S, physical address
   struct context context;      // swtch() here to run process
+  struct seg *segment;         // first seg list node
   uint64_t total_size;         // total memory used by this process
   uint64_t heap_start;           // start of heap
+  uint64_t program_break;        // the last heap's end address. brk:the point that process break
   uint64_t heap_sz;
   uint64_t stride;
   uint64_t priority;
@@ -100,6 +102,8 @@ int fdalloc2(struct file *f, int fd);
 pagetable_t proc_pagetable(struct proc *p);
 void freeproc(struct proc *p);
 
+int fetchaddr(uint64_t addr, uint64_t *ip);
+int fetchstr(uint64_t addr, char *buf, int max);
 
 // exit.c
 void exit(int code);
@@ -112,5 +116,8 @@ int wait(int pid, int *status, int options);
 
 // fork.c
 int clone(void *stack);
+
+// exec.c
+int execve(char *path, char **argv, char **envp);
 
 #endif // PROC_H

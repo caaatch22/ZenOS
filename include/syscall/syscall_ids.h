@@ -1,6 +1,7 @@
 #ifndef SYSCALL_IDS_H
 #define SYSCALL_IDS_H
 
+#define SYS_exec   7
 #define SYS_getcwd 17
 #define SYS_dup 23
 #define SYS_dup3 24
