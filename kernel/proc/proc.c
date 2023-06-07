@@ -409,6 +409,7 @@ forkret(void)
     first = 0;
     rootfs_init();
     p->cwd = namei("/");
+    
   }
 
   // p->iktmp = readtime();

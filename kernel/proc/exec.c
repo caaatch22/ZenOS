@@ -40,6 +40,7 @@ extern uint64_t *access_addr(struct proc *p, pagetable_t pg, uint64_t addr);
 static int
 loadseg(pagetable_t pagetable, uint64_t va, struct inode *ip, uint32_t offset, uint32_t sz)
 {
+
   if(va % PAGE_SIZE != 0){
     sz += va - PAGE_ROUNDDOWN(va);
     offset = PAGE_ROUNDDOWN(offset);
@@ -143,7 +144,6 @@ int execve(char *path, char **argv, char **envp)
     pagetable->page_entry[i] = 0;
   }
 
-
   ilock(ip);
 
   // Check ELF header
@@ -184,7 +184,6 @@ int execve(char *path, char **argv, char **envp)
     flags |= (ph.flags & ELF_PROG_FLAG_WRITE) ? PTE_W : 0;
     flags |= (ph.flags & ELF_PROG_FLAG_READ) ? PTE_R : 0;
 
-
     seg = newseg(pagetable, seghead, LOAD, ph.vaddr, ph.memsz, flags);
 
     if(seg == NULL) {
@@ -194,8 +193,8 @@ int execve(char *path, char **argv, char **envp)
     }
 
     seghead = seg;
-
-    if (loadseg(pagetable, ph.vaddr, ip, ph.off, ph.filesz) < 0) {
+    if (loadseg(pagetable, ph.vaddr, ip, ph.off, ph.filesz) < 0)
+    {
       print("loadseg fail\n");
       iunlock(ip);
       goto bad;

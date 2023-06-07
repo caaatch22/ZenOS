@@ -10,12 +10,10 @@ SECTIONS
     *(.text.entry)
     *(.text .text.*)
     . = ALIGN(4K);
-/*
     PROVIDE(_trapforward = .);
     *(.trapforwardsec)
     . = ALIGN(4K);
     ASSERT(( . - _trapforward ) == 4K, "err : trapforward sector is larger than 4K" );
-*/
     PROVIDE(etext = .);
   }
 

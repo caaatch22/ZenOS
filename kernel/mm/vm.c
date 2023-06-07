@@ -224,9 +224,9 @@ void free_user_mem_and_pagetables(pagetable_t pagetable, uint64_t total_size)
 
 void kernel_vmenable()
 {
-  sfence_vma();
+  // sfence_vma();
   w_satp(MAKE_SATP(kernel_pagetable));
-  sfence_vma();
+  // sfence_vma();
   LOG_INFO("enable pageing at %p", r_satp());
 }
 

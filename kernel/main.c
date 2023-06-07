@@ -39,9 +39,8 @@ void main(uint64_t mhartid, uint64_t dtb_address)
     plicinithart();
 
     kernel_vminit();
-    kmallocinit();
     kernel_vmenable();
-
+    kmallocinit();
     // uint64_t pos = INITRD_START + 512 * 1292 + 32;
     // LOG_DEBUG("%s", (char *)pos);
     // PANIC("test");

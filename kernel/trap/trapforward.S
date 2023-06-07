@@ -11,7 +11,7 @@
 #
 
 
-.section trapforwardsec
+.section .trapforwardsec
 .globl trapforward
 trapforward:
 .align 4

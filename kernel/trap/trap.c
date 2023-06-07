@@ -147,7 +147,7 @@ void usertrapret() {
   struct trapframe *trapframe = curr_proc()->trapframe;
   trapframe->kernel_satp = r_satp(); // kernel page table
   // LOG_DEBUG("xxxx curr_pid %d", curr_proc()->pid);
-  trapframe->kernel_sp = curr_proc()->kstack + PAGE_SIZE; // process's kernel stack
+  trapframe->kernel_sp = curr_proc()->kstack + (PAGE_SIZE * 16); // process's kernel stack
   trapframe->kernel_trap = (uint64_t)usertrap;
   trapframe->kernel_hartid = r_tp(); // hartid for cpuid()
   LOG_DEBUG("epc=%p",trapframe->epc);
@@ -167,7 +167,7 @@ void usertrapret() {
   // switches to the user page table, restores user registers,
   // and switches to user mode with sret.
   uint64_t fn = TRAPFORWARD + (userret - trapforward);
-  // debugcore("return to user, satp=%p, trampoline=%p, kernel_trap=%p\n",satp, fn,  trapframe->kernel_trap);
+  LOG_DEBUG("return to user, satp=%p, trampoline=%p, kernel_trap=%p\n",satp, fn,  trapframe->kernel_trap);
   ((void (*)(uint64_t, uint64_t))fn)(TRAPFRAME, satp);
 }
 

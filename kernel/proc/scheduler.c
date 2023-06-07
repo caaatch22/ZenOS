@@ -14,6 +14,7 @@ void scheduler(void)
     int any_proc = FALSE;
     // lock when picking proc
     acquire_spinlock(&pool_lock);
+
     for (struct proc *p = pool; p < &pool[NPROC]; p++) {
       if (!p->state == UNUSED) {
         any_proc = TRUE;

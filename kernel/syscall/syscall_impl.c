@@ -556,11 +556,6 @@ pid_t sys_clone(unsigned long flags, void *child_stack, void *ptid, void *tls, v
 
 
 
-int sys_exec(char *path, char** argv)
-{
-  return execve(path, (char **)argv, 0);
-}
-
 #define MAX_EXEC_ARG_COUNT 16
 #define MAX_EXEC_ARG_LENGTH 128
 
@@ -590,6 +585,11 @@ static int arg_copy(struct proc* p, char *arg_va[], char *arg[], char arg_str[][
   return argc;
 }
 
+int sys_exec(char *path, char** argv)
+{
+  return sys_execve(path, argv, 0);
+}
+
 int sys_execve( char *pathname_va, char * argv_va[], char * envp_va[]) {
   struct proc *p = curr_proc();
   char name[MAX_NAME_SIZE];
@@ -607,7 +607,6 @@ int sys_execve( char *pathname_va, char * argv_va[], char * envp_va[]) {
 
   LOG_TRACE("argv_va=%d argc=%d", argv_va, argc);
   LOG_TRACE("envp_va=%d envc=%d", envp_va, envc);
-
   return execve(name, argv, envp);
 }
 
