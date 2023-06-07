@@ -16,6 +16,12 @@ extern void rootfs_init();
 
 struct proc pool[NPROC];
 
+char initcode[] = {0x17, 0x05, 0x00, 0x00, 0x13, 0x05, 0x45, 0x02, 0x97,
+                   0x05, 0x00, 0x00, 0x93, 0x85, 0x35, 0x02, 0x93, 0x08, 0x70, 0x00, 0x73,
+                   0x00, 0x00, 0x00, 0x93, 0x08, 0xd0, 0x05, 0x73, 0x00, 0x00, 0x00, 0xef,
+                   0xf0, 0x9f, 0xff, 0x2f, 0x69, 0x6e, 0x69, 0x74, 0x00, 0x00, 0x24, 0x00,
+                   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+
 __attribute__((aligned(16))) char kstack[NPROC][KSTACK_SIZE];
 
 
@@ -391,10 +397,10 @@ uint64_t * access_addr(struct proc *p, pagetable_t pg, uint64_t addr) {
 // Fetch the uint64_t at addr from the current process.
 /**
  * @brief fetch uint64_t at addr into *ip
- * 
- * @param addr 
- * @param ip 
- * @return int 
+ *
+ * @param addr
+ * @param ip
+ * @return int
  */
 int fetchaddr(uint64_t addr, uint64_t *ip)
 {
@@ -402,7 +408,7 @@ int fetchaddr(uint64_t addr, uint64_t *ip)
 
   // if (partofseg(p->segment, addr, addr + sizeof(uint64_t)) == NONE){
   //   __debug_error(":fetchaddr", "addr is not part of this proc\n");
-  //   return -1;    
+  //   return -1;
   // }
 
   if(copyin2((char *)ip, addr, sizeof(*ip)) != 0)
