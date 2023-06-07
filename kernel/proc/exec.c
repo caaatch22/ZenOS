@@ -250,7 +250,7 @@ int execve(char *path, char **argv, char **envp)
   if ((envc = pushstack(pagetable, uenvp, envp, MAXENV, &sp)) < 0 ||
       (argc = pushstack(pagetable, uargv, argv, MAXARG, &sp)) < 0) {
     //__debug_warn("execve", "fail to push argv or envp into user stack\n");
-    print("push arg & env wrong\n");
+    LOG_DEBUG("push arg & env wrong\n");
     goto bad;
   }
 
