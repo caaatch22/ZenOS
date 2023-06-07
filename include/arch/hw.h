@@ -40,4 +40,7 @@
 #define USTACK_BOTTOM 0xC0000000   // 3GB, user stack lower address
 #define UTEXT_START 0x1000
 
+#define VKSTACK                 0x3EC0000000L
+#define VUSTACK                 0x70000000
+
 #endif

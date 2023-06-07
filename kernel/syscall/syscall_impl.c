@@ -545,6 +545,72 @@ int sys_mkdirat(int dirfd, char *path_va, int mode)
 	return 0;
 }
 
+// only support SIGCHLD, and other params are ignored.
+pid_t sys_clone(unsigned long flags, void *child_stack, void *ptid, void *tls, void *ctid) {
+//    if (flags != SIGCHLD) {
+//        LOG_INFO("clone: flags must be SIGCHLD");
+//        return -1;
+//    }
+  return clone(child_stack);
+}
+
+
+
+int sys_exec(char *path, char** argv)
+{
+  return execve(path, (char **)argv, 0);
+}
+
+#define MAX_EXEC_ARG_COUNT 16
+#define MAX_EXEC_ARG_LENGTH 128
+
+static int arg_copy(struct proc* p, char *arg_va[], char *arg[], char arg_str[][MAX_EXEC_ARG_LENGTH]) {
+  int argc = 0;
+
+  while (argc < MAX_EXEC_ARG_COUNT) {
+    char *arg_i; // the argv[i]
+    if (copyin(p->pagetable, (char *)&arg_i, (uint64_t)&arg_va[argc], sizeof(char *)) < 0) {
+      break;
+    }
+
+    if (arg_i == NULL) {
+      // no more arg
+      break;
+    }
+
+    // copy *arg[i] (the string)
+    if (copyinstr(p->pagetable, arg_str[argc], (uint64_t)arg_i, MAX_EXEC_ARG_LENGTH) < 0)
+    {
+      break;
+    }
+
+    arg[argc] = arg_str[argc]; // point at the copied string
+    argc++;
+  }
+  return argc;
+}
+
+int sys_execve( char *pathname_va, char * argv_va[], char * envp_va[]) {
+  struct proc *p = curr_proc();
+  char name[MAX_NAME_SIZE];
+  char argv_str[MAX_EXEC_ARG_COUNT][MAX_EXEC_ARG_LENGTH];
+  char envp_str[MAX_EXEC_ARG_COUNT][MAX_EXEC_ARG_LENGTH];
+  copyinstr(p->pagetable, name, (uint64_t)pathname_va, MAX_NAME_SIZE);
+  LOG_INFO("sys_exec %s", name);
+
+  int argc, envc;
+  const char *argv[MAX_EXEC_ARG_COUNT];
+  const char *envp[MAX_EXEC_ARG_COUNT];
+  // tracecore("argv_va=%d argc=%d", argv_va, argc);
+  argc = argv_va == NULL ? 0 : arg_copy(p, argv_va, argv, argv_str);
+  envc = envp_va == NULL ? 0 : arg_copy(p, envp_va, envp, envp_str);
+
+  LOG_TRACE("argv_va=%d argc=%d", argv_va, argc);
+  LOG_TRACE("envp_va=%d envc=%d", envp_va, envc);
+
+  return execve(name, argv, envp);
+}
+
 // // Create the path new as a link to the same inode as old.
 // int sys_link(char *oldpath_va, char *newpath_va) {
 //   char name[DIRSIZ], new[MAX_NAME_SIZE], old[MAX_NAME_SIZE];

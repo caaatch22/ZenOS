@@ -11,6 +11,8 @@
 char *syscall_names(int id)
 {
   switch (id) {
+  case SYS_exec:
+    return "SYS_exec";
   case SYS_getcwd:
     return "SYS_getcwd";
   case SYS_dup:
@@ -151,15 +153,18 @@ void syscall()
   case SYS_dup3:
     ret = sys_dup3((int)args[0], (int)args[1], (int)args[2]);
     break;
-//   case SYS_fork:
-//     ret = sys_fork();
-//     break;
-//   case SYS_execv:
-//     ret = sys_execv((char *)args[0], (char **)args[1]);
-//     break;
-//   case SYS_waitpid:
-//     ret = sys_waitpid(args[0], (int *)args[1]);
-//     // break;
+  case SYS_clone:
+    ret = sys_clone(args[0], (void *)args[1], (void *)args[2], (void *)args[3], (void *)args[4]);
+    break;
+  case SYS_exec:
+    ret = sys_exec((char *)args[0], (char **)args[1]);
+    break;
+  case SYS_execve:
+    ret = sys_execve((char *)args[0], (char **)args[1], (char **)args[2]);
+    break;
+  //   case SYS_waitpid:
+  //     ret = sys_waitpid(args[0], (int *)args[1]);
+  //     // break;
   case SYS_times:
     ret = sys_times((struct tms *)args[0]);
     break;
@@ -191,7 +196,9 @@ void syscall()
     ret = -1;
     LOG_WARN("unknown syscall %d", (int)id);
   }
-  trapframe->a0 = ret; // return value
+  if(id != SYS_execve)
+    trapframe->a0 = ret; // return value
+
   if (id != SYS_write && id != SYS_read) {
     LOG_TRACE("syscall %d ret %l", (int)id, ret);
   }

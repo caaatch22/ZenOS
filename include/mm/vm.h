@@ -2,6 +2,7 @@
 #define VM_H
 
 #include "common/defs.h"
+enum segtype;
 
 #define VA_VPN_MASK (0x1FFul)
 #define VA_VPN_SHIFT(level) (12 + (3 - level) * 9)
@@ -19,6 +20,13 @@
 #define PTE_W (1ul << 2)
 #define PTE_X (1ul << 3)
 #define PTE_U (1ul << 4)
+
+#define PTE_FLAGS(pte) ((pte) &0x3FF)
+
+// Flags of unmappages()
+#define VM_FREE (1 << 0)  // free the pages when unmapping
+#define VM_USER (1 << 1)  // are the pages belong to user?
+#define VM_HOLE (1 << 2)  // whether allow unmapped or invalid hole in the pages range
 
 struct pagetable {
   uint64_t page_entry[1 << 9];
@@ -57,5 +65,17 @@ int copyin2(char *dst, uint64_t srcva, uint64_t len);
 int copyout2(uint64_t dstva, char *src, uint64_t len);
 
 int copyinstr(pagetable_t pagetable, char *dst, uint64_t srcva, uint64_t max);
+
+int copyinstr2(char *dst, uint64_t srcva, uint64_t max);
+
+int uvmcopy(pagetable_t old_pagetable, pagetable_t new_pagetable, uint64_t total_size);
+
+uint64_t
+uvmalloc(pagetable_t pagetable, uint64_t start, uint64_t end, int perm);
+
+uint64_t
+uvmdealloc(pagetable_t pagetable, uint64_t start, uint64_t end, enum segtype segt);
+
+void uvmfree(pagetable_t pagetable);
 
 #endif

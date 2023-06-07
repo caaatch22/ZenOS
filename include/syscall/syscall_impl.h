@@ -8,7 +8,9 @@ int sys_getcwd(char *ubuf, size_t size);
 
 int sys_fstat(int fd, struct kstat *statbuf_va);
 
-int sys_execv(char *pathname_va, char *argv_va[]);
+int sys_exec(char *pathname_va, char **argv_va);
+
+int sys_execve(char *path, char **argv, char **envp);
 
 int sys_exit(int status);
 
@@ -46,7 +48,7 @@ int sys_mkdir(char *pathname_va);
 
 int sys_close(int fd);
 
-pid_t sys_fork(void);
+pid_t sys_clone(unsigned long flags, void *child_stack, void *ptid, void *tls, void *ctid);
 
 uint64_t sys_times(struct tms *tms_va);
 

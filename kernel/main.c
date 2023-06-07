@@ -50,7 +50,7 @@ void main(uint64_t mhartid, uint64_t dtb_address)
 
     //for fs test, it will search a file/dir put into the img in build time
     rootfs_init();
-    fs_test("/bin/test");
+    fs_test("/bin");
     //end
 
     shutdown();

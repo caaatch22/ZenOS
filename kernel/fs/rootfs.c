@@ -197,13 +197,13 @@ void rootfs_init()
 	mount_init_fs(&devfs, dir);
 	iunlockput(dir);
 
-	// if ((dir = create("/proc", T_DIR, NULL)) == NULL)
-	// 	PANIC("in rootfs.c: create //proc wrong!");
-	// iunlockput(dir);
-	// dir = namei("/proc");
-	// ilock(dir);
-	// mount_init_fs(&procfs, dir);
-	// iunlockput(dir);
+	if ((dir = create("/proc", T_DIR, NULL)) == NULL)
+		PANIC("in rootfs.c: create //proc wrong!");
+	iunlockput(dir);
+	dir = namei("/proc");
+	ilock(dir);
+	mount_init_fs(&procfs, dir);
+	iunlockput(dir);
 }
 
 /**
