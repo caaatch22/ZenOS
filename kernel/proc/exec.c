@@ -56,7 +56,9 @@ loadseg(pagetable_t pagetable, uint64_t va, struct inode *ip, uint32_t offset, u
 
   for(i = 0; i < sz; i += PAGE_SIZE) {
     uint64_t *pte = pte_fetch(pagetable, va + i);
-    pa = PTE2PA_PPN(*pte);
+    pa = va2pa(pagetable, va);
+    // uint64_t pa1 = PTE2PA_PPN(*pte);
+    // LOG_DEBUG("%d", pa == pa1);
     // pa = walkaddr(pagetable, va + i);
     if(pa == 0)
       PANIC("loadseg: address should exist");
@@ -64,10 +66,11 @@ loadseg(pagetable_t pagetable, uint64_t va, struct inode *ip, uint32_t offset, u
       n = sz - i;
     else
       n = PAGE_SIZE;
-    LOG_DEBUG("i:%d, n:%d filesize:%d", i, n, ip->size);
+    // LOG_DEBUG("i:%d, n:%d filesize:%d", i, n, ip->size);
     if (ip->fop->read(ip, 0, (uint64_t)pa, offset + i, n) != n)
       return -1;
   }
+
 
   return 0;
 }

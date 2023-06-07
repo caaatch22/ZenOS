@@ -15,6 +15,8 @@ int   strlen(const char* s);
 
 int   strncmp(const char* p, const char* q, uint32_t n);
 
+char *strcpy(char *s, const char *t);
+
 char* strncpy(char* s, const char* t, int n);
 
 char *strchr(const char *s, char c);

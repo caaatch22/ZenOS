@@ -5,6 +5,7 @@
 #include "proc/proc.h"
 #include "trap/trap.h"
 #include "common/common.h"
+#include "fs/fstat.h"
 
 
 // for debug
@@ -69,8 +70,8 @@ char *syscall_names(int id)
 //     return "SYS_setpriority";
 //   case SYS_getpriority:
 //     return "SYS_getpriority";
-//   case SYS_settimeofday:
-//     return "SYS_settimeofday";
+  case SYS_getdents64:
+    return "SYS_getdents64";
   case SYS_getpid:
     return "SYS_getpid";
   case SYS_getppid:
@@ -141,6 +142,12 @@ void syscall()
 //   case SYS_getpriority:
 //     ret = sys_getpriority(args[0]);
 //     break;
+  case SYS_getdents64:
+    ret = sys_getdents((int)args[0], (struct dirent *)args[1], args[2]);
+    break;
+  case SYS_brk:
+    ret = sys_brk((void *)args[0]);
+    break;
   case SYS_getpid:
     ret = sys_getpid();
     break;
@@ -162,11 +169,20 @@ void syscall()
   case SYS_execve:
     ret = sys_execve((char *)args[0], (char **)args[1], (char **)args[2]);
     break;
-  //   case SYS_waitpid:
-  //     ret = sys_waitpid(args[0], (int *)args[1]);
-  //     // break;
+  // case SYS_waitpid:
+  //   ret = sys_waitpid(args[0], (int *)args[1]);
+  //   break;
+  case SYS_uname:
+    ret = sys_uname((struct utsname *)args[0]);
+    break;
+  case SYS_gettimeofday:
+    ret = sys_gettimeofday((struct timeval *)args[0], (struct timezone *)args[1]);
+    break;
   case SYS_times:
     ret = sys_times((struct tms *)args[0]);
+    break;
+  case SYS_nanosleep:
+    ret = sys_nanosleep((struct timeval *)args[0], (struct timeval *)args[1]);
     break;
     //   case SYS_mknod:
     //     ret = sys_mknod((char *)args[0], args[1], args[2]);

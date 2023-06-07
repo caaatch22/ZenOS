@@ -1,6 +1,6 @@
 #include "syscall/syscall_impl.h"
 #include "common/common.h"
-// #include "arch/timer.h"
+#include "arch/timer.h"
 #include "proc/proc.h"
 #include "mm/vm.h"
 #include "fs/file.h"
@@ -32,6 +32,24 @@ int sys_fstat(int fd, struct kstat *statbuf_va) {
 
   return filestat(f, (uint64_t)statbuf_va);
 
+}
+
+int sys_uname(struct utsname *utsname_va) {
+  struct utsname utsname;
+  struct proc *p = curr_proc();
+  strcpy(utsname.sysname, "ZenOS");
+  strcpy(utsname.nodename, "ZenOS");
+  strcpy(utsname.release, "1.0");
+  strcpy(utsname.version, "1.0");
+  strcpy(utsname.machine, "riscv64");
+  strcpy(utsname.domainname, "Metaverse");
+
+  if (copyout(p->pagetable, (uint64_t)utsname_va, (char *)&utsname, sizeof(utsname)) != 0)
+  {
+    LOG_INFO("sys_uname: copyout failed");
+    return -1;
+  }
+  return 0;
 }
 
 int sys_pipe(int (*pipefd_va)[2]) {
@@ -95,6 +113,38 @@ pid_t sys_getppid()
   }
   release_spinlock(&wait_lock);
   return -1;
+}
+
+int sys_getdents(int fd, struct dirent *dirp64, unsigned long len) {
+  
+  struct file *f;
+  struct proc *p = curr_proc();
+  f = p->ofiles[fd];
+  if (f == NULL) {
+    LOG_INFO("sys_getdents: fd=%d is not valid", fd);
+    // print_proc(p);
+    return -1;
+  }
+  return filereaddir(f, dirp64, len);
+}
+
+int sys_brk(void *addr) {
+  struct proc *p = curr_proc();
+  uint64_t newbrk = (uint64_t)addr;
+  if (newbrk == 0) {
+    // printf("sys_brk want: %p    brk:%p\n", newbrk, p->program_break);
+    return p->program_break;
+  } else {
+    // printf("sys_brk want: %p    brk:%p\n", newbrk, p->program_break);
+  }
+
+  if(growproc(newbrk) < 0){
+    print("in sys_brk, growproc failed\n");
+    return p->program_break;
+  }
+  
+  // printf("brk return: %p\n", newbrk);
+  return newbrk;
 }
 
 // pid_t sys_fork() {
@@ -189,7 +239,7 @@ int sys_chdir(char *path_va) {
 //     char name[MAX_NAME_SIZE];
 //     char argv_str[MAX_EXEC_ARG_COUNT][MAX_EXEC_ARG_LENGTH];
 //     copyinstr(p->pagetable, name, (uint64_t)pathname_va, MAX_NAME_SIZE);
-//     infof("sys_exec %s", name);
+//     LOG_INFO("sys_exec %s", name);
 
 //     int argc = 0;
 //     const char *argv[MAX_EXEC_ARG_COUNT];
@@ -262,6 +312,86 @@ uint64_t sys_times(struct tms *tms_va) {
 
   return get_tick();
 }
+
+int sys_gettimeofday(struct timeval *tv_va, struct timezone *tz_va) {
+  if (tv_va == NULL && tz_va == NULL) {
+    LOG_INFO("sys_gettimeofday: tv_va and tz_va are both NULL");
+    return -1;
+  }
+
+  struct timeval tv;
+  struct timezone tz;
+
+  uint64_t timeus = get_time_us();
+  tv.tv_sec = timeus / USEC_PER_SEC;
+  tv.tv_usec = timeus % USEC_PER_SEC;
+  memset(&tz, 0, sizeof(tz));
+
+  struct proc *p = curr_proc();
+  if (tv_va && copyout(p->pagetable, (uint64_t)tv_va, (char *)&tv, sizeof(struct timeval)) != 0) {
+    LOG_INFO("sys_gettimeofday: copyout failed");
+    return -1;
+  }
+  if (tz_va && copyout(p->pagetable, (uint64_t)tz_va, (char*)&tz, sizeof(struct timezone)) != 0) {
+    LOG_INFO("sys_gettimeofday: copyout failed");
+    return -1;
+  }
+  return 0;
+}
+
+int sys_nanosleep(struct timeval *req_va, struct timeval *rem_va) {
+  if (req_va == NULL) {
+    LOG_INFO("sys_nanosleep: req_va is NULL");
+      return -1;
+  }
+  struct timeval req;
+  struct timeval rem;
+  struct proc *p = curr_proc();
+  if (copyin(p->pagetable, (char *)&req, (uint64_t)req_va, sizeof(struct timeval)) != 0) {
+    LOG_INFO("sys_nanosleep: copyin failed");
+    return -1;
+  }
+
+  uint64_t timeus = get_time_us();
+  uint64_t expires = req.tv_sec * USEC_PER_SEC + req.tv_usec;
+
+    // already expired
+  if (timeus + expires > get_time_us()) {
+    return 0;
+  }
+
+  struct timer *timer = add_timer(expires);
+  if (timer == NULL) {
+    LOG_INFO("sys_nanosleep: timer is full, cannot add timer");
+    goto err_rem;
+  }
+    // guard lock is acquired by add_timer
+  sleep(timer, &timer->guard_lock);
+
+  release_spinlock(&timer->guard_lock);
+  del_timer(timer);
+
+  uint64_t duration = get_time_us() - timeus;
+  uint64_t remain = 0;
+  if (duration < expires) {
+    remain = expires - duration;
+    goto err_rem;
+  }
+  return 0;
+
+
+err_rem:
+  if (rem_va) {
+    rem.tv_sec = remain / USEC_PER_SEC;
+    rem.tv_usec = remain % USEC_PER_SEC;
+    if (copyout(p->pagetable, (uint64_t)rem_va, (char*)&rem, sizeof(struct timeval)) != 0) {
+      LOG_INFO("sys_nanosleep: copyout failed");
+      return -1;
+    }
+  }
+  return -1;
+}
+
 
 int sys_close(int fd) {
   struct proc *p = curr_proc();
@@ -361,15 +491,15 @@ int sys_openat(int fd, char *filename, int flags, int mode) {
 
 //     for (a = va; a < va + npages * PGSIZE; a += PGSIZE) {
 //         if ((pte = walk(pagetable, a, FALSE)) == 0) {
-//             infof("uvmunmap: walk\n");
+//             LOG_INFO("uvmunmap: walk\n");
 //             return -1;
 //         }
 //         if ((*pte & PTE_V) == 0) {
-//             infof("uvmunmap: not mapped\n");
+//             LOG_INFO("uvmunmap: not mapped\n");
 //             return -1;
 //         }
 //         if (PTE_FLAGS(*pte) == PTE_V) {
-//             infof("uvmunmap: not a leaf\n");
+//             LOG_INFO("uvmunmap: not a leaf\n");
 //             return -1;
 //         }
 

@@ -102,9 +102,11 @@ int fdalloc2(struct file *f, int fd);
 pagetable_t proc_pagetable(struct proc *p);
 void freeproc(struct proc *p);
 
+int growproc(uint64_t newbrk);
 int fetchaddr(uint64_t addr, uint64_t *ip);
 int fetchstr(uint64_t addr, char *buf, int max);
 void userinit();
+
 
 // exit.c
 void exit(int code);

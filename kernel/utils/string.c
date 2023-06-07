@@ -62,6 +62,11 @@ int strncmp(const char* p, const char* q, uint32_t n)
   return (uint8_t)*p - (uint8_t)*q;
 }
 
+char *strcpy(char *s, const char *t) {
+  while ((*s++ = *t++) != 0)
+    ;
+}
+
 char* strncpy(char* s, const char* t, int n) 
 {
   char* os;
