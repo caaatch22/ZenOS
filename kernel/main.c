@@ -47,17 +47,20 @@ void main(uint64_t mhartid, uint64_t dtb_address)
     // PANIC("test");
 
     virtio_blk_init();
+    userinit();
+    first_booted = 0;
 
     //for fs test, it will search a file/dir put into the img in build time
-    rootfs_init();
-    fs_test("/bin");
+    // rootfs_init();
+    // fs_test("/bin");
     //end
 
-    shutdown();
+    // shutdown();
   }
   else {
     //other cores
   }
+  scheduler();
 }
 
 // TODO: add this to proc

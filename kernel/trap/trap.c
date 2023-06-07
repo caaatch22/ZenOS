@@ -52,6 +52,7 @@ void user_exception_handler(uint64_t scause, uint64_t stval, uint64_t sepc) {
     //   exit(-1);
     trapframe->epc += 4;
     intr_enable();
+
     syscall();
     break;
   case StoreAccessFault:
@@ -110,6 +111,7 @@ void user_interrupt_handler(uint64_t scause, uint64_t stval, uint64_t sepc) {
 // called from trampoline.S
 //
 void usertrap() {
+  LOG_DEBUG("nihao");
   uint64_t sepc = r_sepc();
   uint64_t sstatus = r_sstatus();
   uint64_t scause = r_scause();
@@ -140,7 +142,6 @@ void usertrapret() {
   // we're about to switch the destination of traps from
   // kerneltrap() to usertrap(), so turn off interrupts until
   // we're back in user space, where usertrap() is correct.
-
   // intr_off();
   set_usertrap();
   struct trapframe *trapframe = curr_proc()->trapframe;
@@ -149,11 +150,11 @@ void usertrapret() {
   trapframe->kernel_sp = curr_proc()->kstack + PAGE_SIZE; // process's kernel stack
   trapframe->kernel_trap = (uint64_t)usertrap;
   trapframe->kernel_hartid = r_tp(); // hartid for cpuid()
-  // LOG_DEBUG("epc=%p",trapframe->epc);
+  LOG_DEBUG("epc=%p",trapframe->epc);
   w_sepc(trapframe->epc);
+  
   // set up the registers that trampoline.S's sret will use
   // to get to user space.
-
   // set S Previous Privilege mode to User.
   uint64_t x = r_sstatus();
   x &= ~SSTATUS_SPP; // clear SPP to 0 for user mode
@@ -162,7 +163,6 @@ void usertrapret() {
 
   // tell trampoline.S the user page table to switch to.
   uint64_t satp = MAKE_SATP(curr_proc()->pagetable);
-
   // jump to trampoline.S at the top of memory, which
   // switches to the user page table, restores user registers,
   // and switches to user mode with sret.

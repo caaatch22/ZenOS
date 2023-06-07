@@ -25,7 +25,7 @@ OBJS = $(C_OBJS) $(AS_OBJS)
 HEADER_DEP = $(addsuffix .d, $(basename $(C_OBJS)))
 
 ifndef CPUS
-CPUS := 2  # temporary
+CPUS := 1  # temporary
 endif
 
 CFLAGS = \
@@ -120,6 +120,7 @@ initrd.img:
 	sudo mount ./build/initrd.img ./build/mnt
 	sudo mkdir ./build/mnt/bin
 	sudo mkdir ./build/mnt/mnt
+	sudo cp ./usr/build/init ./build/mnt
 	sudo umount ./build/initrd.img
 
 initcode:

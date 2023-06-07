@@ -104,6 +104,7 @@ void freeproc(struct proc *p);
 
 int fetchaddr(uint64_t addr, uint64_t *ip);
 int fetchstr(uint64_t addr, char *buf, int max);
+void userinit();
 
 // exit.c
 void exit(int code);

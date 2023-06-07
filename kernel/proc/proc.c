@@ -10,19 +10,54 @@
 #include "mm/pmallocator.h"
 #include "common/common.h"
 #include "fs/vfs.h"
+#include "mm/kmalloc.h"
+#include "mm/usrmm.h"
 
 extern void swtch(struct context *, struct context *);
 extern void rootfs_init();
 
 struct proc pool[NPROC];
 
-char initcode[] = {0x17, 0x05, 0x00, 0x00, 0x13, 0x05, 0x45, 0x02, 0x97,
-                   0x05, 0x00, 0x00, 0x93, 0x85, 0x35, 0x02, 0x93, 0x08, 0x70, 0x00, 0x73,
-                   0x00, 0x00, 0x00, 0x93, 0x08, 0xd0, 0x05, 0x73, 0x00, 0x00, 0x00, 0xef,
-                   0xf0, 0x9f, 0xff, 0x2f, 0x69, 0x6e, 0x69, 0x74, 0x00, 0x00, 0x24, 0x00,
-                   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+uint8_t initcode[] = {0x17, 0x05, 0x00, 0x00, 0x13, 0x05, 0x45, 0x02, 0x97,
+                      0x05, 0x00, 0x00, 0x93, 0x85, 0x35, 0x02, 0x93, 0x08, 0x70, 0x00, 0x73,
+                      0x00, 0x00, 0x00, 0x93, 0x08, 0xd0, 0x05, 0x73, 0x00, 0x00, 0x00, 0xef,
+                      0xf0, 0x9f, 0xff, 0x2f, 0x69, 0x6e, 0x69, 0x74, 0x00, 0x00, 0x24, 0x00,
+                      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
 
 __attribute__((aligned(16))) char kstack[NPROC][KSTACK_SIZE];
+
+struct proc *initproc;
+
+// Set up first user process.
+void
+userinit(void)
+{
+  struct proc *p;
+
+  p = allocproc();
+  initproc = p;
+  
+  // allocate one user page and copy init's instructions
+  // and data into it.
+  uvminit(p->pagetable, initcode, sizeof(initcode));
+
+  struct seg *s = kmalloc(sizeof(struct seg));
+  s->addr = 0;
+  s->sz = PAGE_SIZE;
+  s->next = NULL;
+  s->type = LOAD;
+  p->segment = s;
+
+  // prepare for the very first "return" from kernel to user.
+  p->trapframe->epc = 0x0;      // user program counter
+  p->trapframe->sp = PAGE_SIZE;  // user stack pointer
+
+  safestrcpy(p->name, "initcode", sizeof(p->name));
+  p->state = RUNNABLE;
+  p->elf = NULL;
+
+  release_spinlock(&p->lock);
+}
 
 
 // helps ensure that wakeups of wait()ing
@@ -80,16 +115,15 @@ pagetable_t proc_pagetable(struct proc *p) {
     PANIC("cannot create empty user pagetable");
 
   // if bind failed, the page allocated should be free (NOT handled here)
-  va_page_bind_range(pagetable, TRAPFORWARD, PAGE_SIZE,
-                     (uint64_t)trapforward, PTE_R | PTE_X);
+  va_page_bind_range(pagetable, TRAPFORWARD, (uint64_t)trapforward,
+                    PAGE_SIZE , PTE_R | PTE_X);
 
   if ((p->trapframe = (struct trapframe *)pm_alloc()) == 0) {
     PANIC("alloc trapframe page failed\n");
   }
-
   // map the trapframe just below TRAMPOLINE, for trampoline.S.
-  va_page_bind_range(pagetable, TRAPFRAME, PAGE_SIZE,
-                     (uint64_t)(p->trapframe), PTE_R | PTE_W);
+  va_page_bind_range(pagetable, TRAPFRAME, (uint64_t)(p->trapframe),
+                    PAGE_SIZE, PTE_R | PTE_W);
   return pagetable;
 }
 

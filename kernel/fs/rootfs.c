@@ -135,7 +135,6 @@ void rootfs_init()
 	init_spinlock(&dev_num.lock, "dev_number");
 	dev_num.number = 1;
 	int inum = 1;
-
 	// rootfs -- in memory fs, mean root
 	memset(&rootfs, 0, sizeof(struct super_block));
 	init_sleeplock(&rootfs.sb_lock, "rootfs_sb");

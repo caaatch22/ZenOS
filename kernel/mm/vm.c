@@ -110,7 +110,7 @@ uint64_t va2pa(pagetable_t pagetable, uint64_t va)
 
 void va_page_bind(pagetable_t pt, uint64_t va, uint64_t pa, uint64_t PTE_PERM)
 {
-  if(PTE_PERM & (~(PTE_R|PTE_W|PTE_X)))
+  if(PTE_PERM & (~(PTE_R|PTE_W|PTE_X|PTE_U)))
     PANIC("illegal permisson indicate");
   if (!ALIGNED(va) || !ALIGNED(pa))
     PANIC("address not aligned");
@@ -127,7 +127,7 @@ void va_page_bind(pagetable_t pt, uint64_t va, uint64_t pa, uint64_t PTE_PERM)
 void va_page_bind_range(pagetable_t pt, uint64_t va, uint64_t pa ,uint64_t size, uint64_t PTE_PERM)
 {
   // LOG_DEBUG("pagesize=%p", size);
-  if (PTE_PERM & (~(PTE_R | PTE_W | PTE_X)))
+  if (PTE_PERM & (~(PTE_R | PTE_W | PTE_X | PTE_U)))
     PANIC("illegal perm indicate");
   if (!ALIGNED(va) || !(ALIGNED(pa)))
     PANIC("address not aligned");
@@ -403,6 +403,25 @@ copyinstr2(char *dst, uint64_t srcva, uint64_t max)
   } else {
     return -1;
   }
+}
+
+// Load the user initcode into address 0 of pagetable,
+// for the very first process.
+// sz must be less than a page.
+void
+uvminit(pagetable_t pagetable, uint8_t *src, uint32_t sz)
+{
+  char *mem;
+  // extern char trampoline[];
+
+  if(sz >= PAGE_SIZE)
+    PANIC("inituvm: more than a page");
+  mem = pm_alloc();
+  memset(mem, 0, PAGE_SIZE);
+	pagereg((uint64_t)mem, 0);	// mappages will increase it
+  va_page_bind_range(pagetable, 0, (uint64_t)mem, PAGE_SIZE, PTE_W | PTE_R | PTE_X | PTE_U);
+  // mappages(pagetable, TRAMPOLINE, (uint64_t)trampoline, PGSIZE, PTE_R|PTE_X|PTE_U);
+  memmove(mem, src, sz);
 }
 
 
