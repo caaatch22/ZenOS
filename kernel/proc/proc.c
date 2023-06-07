@@ -461,3 +461,32 @@ int fetchstr(uint64_t addr, char *buf, int max)
   //   return err;
   // return strlen(buf);
 }
+
+int
+growproc(uint64_t newbrk)
+{
+  struct proc *p = curr_proc();
+  struct seg *heap = getseg(p->segment, HEAP);
+
+  while(heap && p->program_break != (heap->addr+heap->sz)){
+    heap = getseg(heap->next, HEAP);
+  }
+  if(!heap){
+    PANIC("wrong in proc.c : growproc\n");
+  }
+
+  // shrink
+  if(newbrk < p->program_break){
+    uvmdealloc(p->pagetable, newbrk, p->program_break, HEAP);
+    sfence_vma();
+  }
+
+  // growth handled by lazy allocation
+  // update the seg and brk
+  heap->sz += (newbrk - p->program_break);
+  p->program_break = newbrk;
+
+  if(heap->sz < 0)
+    PANIC("wrong in proc.c : growproc  heap->sz < 0\n");
+  return 0;
+}

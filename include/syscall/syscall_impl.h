@@ -3,6 +3,7 @@
 
 #include "common/defs.h"
 #include "fs/fstat.h"
+#include "arch/timer.h"
 
 int sys_getcwd(char *ubuf, size_t size);
 
@@ -10,7 +11,7 @@ int sys_fstat(int fd, struct kstat *statbuf_va);
 
 int sys_exec(char *pathname_va, char **argv_va);
 
-int sys_execve(char *path, char **argv, char **envp);
+int sys_execve(char *pathname_va, char *argv_va[], char *envp_va[]);
 
 int sys_exit(int status);
 
@@ -46,11 +47,21 @@ pid_t sys_wait4(pid_t pid, int *status, int options);
 
 int sys_mkdir(char *pathname_va);
 
+int sys_brk(void *addr);
+
 int sys_close(int fd);
 
 pid_t sys_clone(unsigned long flags, void *child_stack, void *ptid, void *tls, void *ctid);
 
+int sys_uname(struct utsname *uts);
+
 uint64_t sys_times(struct tms *tms_va);
+
+int sys_gettimeofday(struct timeval *tv_va, struct timezone *tz_va);
+
+int sys_nanosleep(struct timeval *req_va, struct timeval *rem_va);
+
+int sys_getdents(int fd, struct dirent *dirp64, unsigned long len);
 
 int sys_sleep(unsigned long long time_in_ms);
 
