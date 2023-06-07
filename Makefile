@@ -35,7 +35,12 @@ CFLAGS = \
 -nostdlib \
 -fno-pie -no-pie \
 -Wno-builtin-declaration-mismatch \
--Wl,--no-warn-rwx-segments
+-Wl,--no-warn-rwx-segments \
+-fno-omit-frame-pointer \
+-ffreestanding \
+-mno-relax \
+-march=rv64gc \
+
 
 # log flags
 LOG ?= error
@@ -117,6 +122,13 @@ initrd.img:
 	sudo mkdir ./build/mnt/mnt
 	sudo umount ./build/initrd.img
 
+initcode:
+	$(CC) $(CFLAGS) -march=rv64g -nostdinc -I. -Ikernel -c usr/src/initcode.S -o usr/build/initcode.o
+	$(LD) $(LDFLAGS) -N -e start -Ttext 0 -o usr/build/initcode.out usr/build/initcode.o
+	$(OBJCOPY) -S -O binary usr/build/initcode.out usr/build/initcode
+	$(OBJDUMP) -S usr/build/initcode.o > usr/build/initcode.asm
+
 clean:
 	rm -rf $(OBJDIR)
+	rm -rf ./usr/build/*
 
