@@ -114,8 +114,7 @@ initrd.img:
 	-mkdir ./build/mnt
 	sudo mount ./build/initrd.img ./build/mnt
 	sudo mkdir ./build/mnt/bin
-	sudo mkdir ./build/mnt/test
-	sudo touch ./build/mnt/bin/test
+	sudo mkdir ./build/mnt/mnt
 	sudo umount ./build/initrd.img
 
 clean:
